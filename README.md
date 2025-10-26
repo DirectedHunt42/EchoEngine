@@ -1,4 +1,6 @@
-# ![Echo Engine Logo](https://github.com/DirectedHunt42/EchoEngine/blob/main/Engine_editor/Icons/Echo_engine/Echo_engine_transparent.png)
+<p align="center">
+  <img src="https://github.com/DirectedHunt42/EchoEngine/blob/main/Engine_editor/Icons/Echo_engine/Echo_engine_transparent.png" alt="Echo Engine Logo" width="200"/>
+</p>
 
 ![Downloads](https://img.shields.io/badge/downloads-0-brightgreen)
 
