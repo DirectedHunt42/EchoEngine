@@ -729,9 +729,17 @@ def setup_main_ui():
                                 if grid_state[ny][nx] is None:
                                     key = (nx, ny)
                                     if key not in plus_buttons:
-                                        btn = ctk.CTkButton(grid_container, text="+", width=GRID_SIZE, height=GRID_SIZE,
-                                                           fg_color="#444444", hover_color="#666666",
-                                                           command=lambda gx=nx, gy=ny: place_room(gx, gy))
+                                        btn = ctk.CTkButton(
+                                            grid_container,
+                                            text="+",
+                                            width=GRID_SIZE,
+                                            height=GRID_SIZE,
+                                            corner_radius=0,
+                                            font=(custom_font_family, 24),
+                                            fg_color="#444444",
+                                            hover_color="#555555",
+                                            command=lambda gx=nx, gy=ny: place_room(gx, gy)
+                                        )
                                         btn.place(x=nx * GRID_SIZE + grid_canvas.winfo_x(),
                                                   y=ny * GRID_SIZE + grid_canvas.winfo_y())
                                         plus_buttons[key] = btn
@@ -777,6 +785,8 @@ def setup_main_ui():
         # Bind the setup_grid function to the grid_container's configure event,
         # so the grid adapts to resizing.
         grid_container.bind("<Configure>", setup_grid)
+        # Call once to ensure initial grid is drawn immediately
+        setup_grid()
 
     def setup_main_level_tab(parent_tab, custom_font_family="Arial"):
         # Multi-floor grid editor (left: floors, right: grid)
@@ -927,6 +937,10 @@ def setup_main_ui():
         # initialize
         setup_grid_main()
 
+    # Initialize the Tutorial tab (single-layer grid) so it shows content
+    setup_tutorial_tab(tutorial_tab, custom_font_family)
+
+    # Initialize the Main Level tab (multi-floor editor)
     setup_main_level_tab(main_level_tab, custom_font_family)
 
     # ========================= Return to Hub & Test App & Export =========================
