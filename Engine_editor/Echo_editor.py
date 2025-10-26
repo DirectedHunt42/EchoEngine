@@ -609,6 +609,7 @@ def setup_main_ui():
         # Single-layer tutorial grid (no floors)
         GRID_SIZE = 40
         plus_buttons = {}
+        plus_placeholders_updating = [False]
         grid_state = []
         GRID_DIM_X, GRID_DIM_Y = 0, 0
         current_room_details_content_frame = None
@@ -648,11 +649,14 @@ def setup_main_ui():
             room_details_content_frame = ctk.CTkFrame(info_display_frame, fg_color="#333333", corner_radius=10)
             room_details_content_frame.pack(fill="both", expand=True, padx=5, pady=5)
             current_room_details_content_frame = room_details_content_frame
+            # --- Room Title ---
             room_title = ctk.CTkLabel(room_details_content_frame,
                                       text=f"Details for Room ({grid_x}, {grid_y})",
                                       font=(custom_font_family, 18, "bold"),
                                       text_color="white")
             room_title.pack(pady=(10, 5))
+
+            # --- Room Name ---
             name_label = ctk.CTkLabel(room_details_content_frame,
                                       text="Room Name:",
                                       font=(custom_font_family, 14),
@@ -666,8 +670,35 @@ def setup_main_ui():
             name_entry.pack(padx=15, pady=(0, 10))
             name_entry.bind("<Return>", lambda event: update_room_name(name_entry, grid_x, grid_y))
             name_entry.bind("<FocusOut>", lambda event: update_room_name(name_entry, grid_x, grid_y))
+
+            # --- Room Description ---
+            desc_label = ctk.CTkLabel(room_details_content_frame,
+                                    text="Room Description:",
+                                    font=(custom_font_family, 14),
+                                    text_color="white")
+            desc_label.pack(anchor="w", padx=15, pady=(10, 2))
+            desc_text = ctk.CTkTextbox(room_details_content_frame,
+                                     width=250,
+                                     height=100,
+                                     font=(custom_font_family, 14),
+                                     fg_color="#444444")
+            desc_text.pack(padx=15, pady=(0, 10))
+
+            # --- Findable Items ---
+            items_label = ctk.CTkLabel(room_details_content_frame,
+                                     text="Findable Items (comma-separated):",
+                                     font=(custom_font_family, 14),
+                                     text_color="white")
+            items_label.pack(anchor="w", padx=15, pady=(0, 2))
+            items_entry = ctk.CTkEntry(room_details_content_frame,
+                                    width=250,
+                                    font=(custom_font_family, 14),
+                                    placeholder_text="Enter items, separated by commas")
+            items_entry.pack(padx=15, pady=(0, 10))
+
+            # --- Placeholder Text ---
             placeholder_text = ctk.CTkLabel(room_details_content_frame,
-                                            text="This is where specific data for this room will go. \nYou can add more labels, buttons, or entry fields here.",
+                                            text="This is where specific data for this room will go.\nYou can add more labels, buttons, or entry fields here.",
                                             font=(custom_font_family, 14),
                                             text_color="#AAAAAA",
                                             wraplength=info_display_frame.winfo_width() - 30)
@@ -712,6 +743,10 @@ def setup_main_ui():
             display_room_details(grid_x, grid_y)
 
         def show_adjacent_placeholders():
+            # Prevent re-entrancy which can cause repeated layout-triggered loops
+            if plus_placeholders_updating[0]:
+                return
+            plus_placeholders_updating[0] = True
             # Clear all existing plus buttons
             for btn in list(plus_buttons.values()):
                 try:
@@ -743,6 +778,8 @@ def setup_main_ui():
                                         btn.place(x=nx * GRID_SIZE + grid_canvas.winfo_x(),
                                                   y=ny * GRID_SIZE + grid_canvas.winfo_y())
                                         plus_buttons[key] = btn
+            # Done updating
+            plus_placeholders_updating[0] = False
 
         def setup_grid(event=None):
             nonlocal GRID_DIM_X, GRID_DIM_Y
@@ -852,12 +889,39 @@ def setup_main_ui():
                                       font=(custom_font_family, 14),
                                       text_color="white")
             name_label.pack(anchor="w", padx=15, pady=(0, 2))
+            # Room Name Section
             name_entry = ctk.CTkEntry(room_details_content_frame,
                                       width=250,
                                       font=(custom_font_family, 14),
                                       placeholder_text="Enter room name")
+            # Room Name (pack first so other sections are visible and layout is stable)
             name_entry.insert(0, current_name)
             name_entry.pack(padx=15, pady=(0, 10))
+
+            # Room Description Section
+            desc_label = ctk.CTkLabel(room_details_content_frame,
+                                    text="Room Description:",
+                                    font=(custom_font_family, 14),
+                                    text_color="white")
+            desc_label.pack(anchor="w", padx=15, pady=(10, 2))
+            desc_text = ctk.CTkTextbox(room_details_content_frame,
+                                     width=250,
+                                     height=100,
+                                     font=(custom_font_family, 14),
+                                     fg_color="#444444")
+            desc_text.pack(padx=15, pady=(0, 10))
+
+            # Findable Items Section
+            items_label = ctk.CTkLabel(room_details_content_frame,
+                                     text="Findable Items (comma-separated):",
+                                     font=(custom_font_family, 14),
+                                     text_color="white")
+            items_label.pack(anchor="w", padx=15, pady=(0, 2))
+            items_entry = ctk.CTkEntry(room_details_content_frame,
+                                    width=250,
+                                    font=(custom_font_family, 14),
+                                    placeholder_text="Enter items, separated by commas")
+            items_entry.pack(padx=15, pady=(0, 10))
             name_entry.bind("<Return>", lambda event: update_room_name_main(name_entry, grid_x, grid_y))
             name_entry.bind("<FocusOut>", lambda event: update_room_name_main(name_entry, grid_x, grid_y))
             placeholder_text = ctk.CTkLabel(room_details_content_frame,
@@ -868,13 +932,72 @@ def setup_main_ui():
             placeholder_text.pack(pady=(5, 10), padx=10)
 
         def refresh_floor_list():
+            # Clear existing buttons
             for widget in floor_list_frame.winfo_children():
                 widget.destroy()
-            for i in range(len(floors)):
-                btn = ctk.CTkButton(floor_list_frame, text=f"Floor {i+1}", width=80,
-                                    command=lambda idx=i: switch_floor(idx))
-                btn.pack(pady=5)
-            add_btn = ctk.CTkButton(floor_list_frame, text="+ Add Floor", command=add_new_floor)
+
+            # Title
+            title = ctk.CTkLabel(floor_list_frame, text="Floors", font=(custom_font_family, 16, "bold"))
+            title.pack(pady=(10,5))
+
+            # If there's only one floor, use simpler styling
+            if len(floors) == 1:
+                floor_frame = ctk.CTkFrame(floor_list_frame, fg_color="#333333")
+                floor_frame.pack(fill="x", padx=5, pady=2)
+                
+                floor_label = ctk.CTkLabel(floor_frame, text=f"Floor 0", 
+                                         font=(custom_font_family, 14))
+                floor_label.pack(side="left", padx=5)
+            else:
+                # Re-add floor buttons in current order with navigation
+                for i in range(len(floors)):
+                    floor_frame = ctk.CTkFrame(floor_list_frame, fg_color="transparent")
+                    floor_frame.pack(fill="x", pady=2, padx=5)
+                    
+                    # Navigation buttons frame (left side)
+                    nav_frame = ctk.CTkFrame(floor_frame, fg_color="transparent")
+                    nav_frame.pack(side="left", padx=(0, 5))
+                    
+                    # Up button
+                    if i > 0:  # Only show up button if not first floor
+                        up_btn = ctk.CTkButton(nav_frame,
+                                            text="↑",
+                                            width=20,
+                                            command=lambda idx=i: reorder_floors(idx, idx-1),
+                                            fg_color="#333333",
+                                            hover_color="#444444")
+                        up_btn.pack(side="left", padx=1)
+                    
+                    # Down button
+                    if i < len(floors) - 1:  # Only show down button if not last floor
+                        down_btn = ctk.CTkButton(nav_frame,
+                                              text="↓",
+                                              width=20,
+                                              command=lambda idx=i: reorder_floors(idx, idx+1),
+                                              fg_color="#333333",
+                                              hover_color="#444444")
+                        down_btn.pack(side="left", padx=1)
+                    
+                    # Floor label/button that can be clicked to switch floors
+                    floor_btn = ctk.CTkButton(floor_frame, 
+                                            text=f"Floor {i}",
+                                            command=lambda idx=i: switch_floor(idx),
+                                            fg_color="#333333" if i != current_floor[0] else "#444444",
+                                            hover_color="#444444")
+                    floor_btn.pack(side="left", expand=True, fill="x", padx=(0,5))
+                    
+                    # Remove button for this floor (right side)
+                    remove_btn = ctk.CTkButton(floor_frame,
+                                             text="×",
+                                             width=30,
+                                             command=lambda idx=i: remove_floor(idx),
+                                             fg_color="#661111",
+                                             hover_color="#881111")
+                    remove_btn.pack(side="right")
+
+            # Add Floor button at the bottom
+            add_btn = ctk.CTkButton(floor_list_frame, text="+ Add Floor", command=add_new_floor,
+                                  fg_color="#444444", hover_color="#666666")
             add_btn.pack(pady=10)
 
         def switch_floor(floor_index):
@@ -886,6 +1009,83 @@ def setup_main_ui():
                 }
             redraw_floor()
 
+        # Variables for drag and drop
+        drag_data = {"start_y": 0, "source_idx": None}
+
+        def start_drag(event, floor_idx):
+            drag_data["start_y"] = event.y_root
+            drag_data["source_idx"] = floor_idx
+            
+        def handle_drag(event, floor_idx):
+            if drag_data["source_idx"] is None:
+                return
+                
+            # Calculate the target position based on mouse position
+            for widget in floor_list_frame.winfo_children()[:-1]:  # Exclude add button
+                if isinstance(widget, ctk.CTkFrame):
+                    widget_y = widget.winfo_rooty()
+                    widget_height = widget.winfo_height()
+                    if widget_y <= event.y_root <= widget_y + widget_height:
+                        target_idx = floor_list_frame.winfo_children().index(widget)
+                        if target_idx != drag_data["source_idx"]:
+                            reorder_floors(drag_data["source_idx"], target_idx)
+                            break
+
+        def end_drag(event, floor_idx):
+            drag_data["source_idx"] = None
+
+        def reorder_floors(old_idx, new_idx):
+            if old_idx == new_idx:
+                return
+
+            # Update the floors dictionary
+            floors_list = [(i, data) for i, data in sorted(floors.items())]
+            floor_to_move = floors_list.pop(old_idx)
+            floors_list.insert(new_idx, floor_to_move)
+            
+            # Rebuild floors dictionary with new order
+            floors.clear()
+            for new_idx, (_, data) in enumerate(floors_list):
+                floors[new_idx] = data
+
+            # Update current floor index if needed
+            if current_floor[0] == old_idx:
+                current_floor[0] = new_idx
+            elif old_idx < new_idx:
+                if current_floor[0] > old_idx and current_floor[0] <= new_idx:
+                    current_floor[0] -= 1
+            else:
+                if current_floor[0] >= new_idx and current_floor[0] < old_idx:
+                    current_floor[0] += 1
+
+            refresh_floor_list()
+
+        def remove_floor(floor_idx):
+            if len(floors) <= 1:
+                return  # Don't remove the last floor
+                
+            # Remove the floor
+            floors_list = list(sorted(floors.items()))
+            del floors[floor_idx]
+            
+            # Rebuild floors dictionary with updated indices
+            floors.clear()
+            new_idx = 0
+            for _, data in floors_list:
+                if new_idx == floor_idx:
+                    continue
+                floors[new_idx] = data
+                new_idx += 1
+                
+            # Update current floor if needed
+            if current_floor[0] == floor_idx:
+                current_floor[0] = max(0, floor_idx - 1)
+            elif current_floor[0] > floor_idx:
+                current_floor[0] -= 1
+                
+            refresh_floor_list()
+            redraw_floor()
+
         def add_new_floor():
             new_index = len(floors)
             floors[new_index] = {
@@ -894,6 +1094,58 @@ def setup_main_ui():
             }
             refresh_floor_list()
             switch_floor(new_index)
+
+        def reorder_floors(old_idx, new_idx):
+            if old_idx == new_idx:
+                return
+
+            # Update the floors dictionary
+            floors_list = [(i, data) for i, data in sorted(floors.items())]
+            floor_to_move = floors_list.pop(old_idx)
+            floors_list.insert(new_idx, floor_to_move)
+            
+            # Rebuild floors dictionary with new order
+            floors.clear()
+            for new_idx, (_, data) in enumerate(floors_list):
+                floors[new_idx] = data
+
+            # Update current floor index if needed
+            if current_floor[0] == old_idx:
+                current_floor[0] = new_idx
+            elif old_idx < new_idx:
+                if current_floor[0] > old_idx and current_floor[0] <= new_idx:
+                    current_floor[0] -= 1
+            else:
+                if current_floor[0] >= new_idx and current_floor[0] < old_idx:
+                    current_floor[0] += 1
+
+            refresh_floor_list()
+
+        def remove_floor(floor_idx):
+            if len(floors) <= 1:
+                return  # Don't remove the last floor
+                
+            # Remove the floor
+            floors_list = list(sorted(floors.items()))
+            del floors[floor_idx]
+            
+            # Rebuild floors dictionary with updated indices
+            floors.clear()
+            new_idx = 0
+            for _, data in floors_list:
+                if new_idx == floor_idx:
+                    continue
+                floors[new_idx] = data
+                new_idx += 1
+                
+            # Update current floor if needed
+            if current_floor[0] == floor_idx:
+                current_floor[0] = max(0, floor_idx - 1)
+            elif current_floor[0] > floor_idx:
+                current_floor[0] -= 1
+                
+            refresh_floor_list()
+            redraw_floor()
 
         def add_room_to_floor(grid_x, grid_y, is_immovable=False, initial_name="Room"):
             floor = floors[current_floor[0]]
@@ -931,6 +1183,24 @@ def setup_main_ui():
                 except Exception:
                     pass
             plus_buttons.clear()
+            
+            # First, add plus buttons based on rooms in the floor below
+            floor_below_idx = current_floor[0] - 1
+            if floor_below_idx in floors:
+                floor_below = floors[floor_below_idx]["grid_state"]
+                for y in range(len(floor_below)):
+                    for x in range(len(floor_below[y])):
+                        if floor_below[y][x] is not None:
+                            # Add plus button above this room if there's no room there already
+                            if grid_state[y][x] is None:
+                                btn = ctk.CTkButton(grid_container, text="+", width=20, height=20,
+                                                  corner_radius=0, fg_color="#444444", hover_color="#666666",
+                                                  command=lambda gx=x, gy=y: place_room_on_floor(gx, gy))
+                                btn.place(x=x * GRID_SIZE + grid_canvas.winfo_x() + GRID_SIZE//2 - 10,
+                                       y=y * GRID_SIZE + grid_canvas.winfo_y() + GRID_SIZE//2 - 10)
+                                plus_buttons[f"{x},{y}"] = btn
+            
+            # Then add plus buttons around existing rooms on current floor
             directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
             for y in range(GRID_DIM_Y):
                 for x in range(GRID_DIM_X):
