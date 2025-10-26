@@ -796,6 +796,77 @@ def setup_main_ui():
         floors = {}  # floor_index -> {"grid_state": [[None]], "plus_buttons": {}}
         current_floor = [0]
 
+        # Info display on the right side of the main-level editor
+        info_display_frame = None
+
+        def clear_info_display_frame_main():
+            nonlocal info_display_frame
+            if info_display_frame is None:
+                return
+            for w in info_display_frame.winfo_children():
+                try:
+                    w.destroy()
+                except Exception:
+                    pass
+
+        def update_room_name_main(entry_widget, grid_x, grid_y):
+            new_name = entry_widget.get()
+            floor = floors.get(current_floor[0])
+            if not floor:
+                return
+            grid_state = floor["grid_state"]
+            cell = grid_state[grid_y][grid_x]
+            if cell is None:
+                return
+            cell['name'] = new_name
+            # update label if it exists
+            if 'label' in cell and cell['label']:
+                try:
+                    cell['label'].configure(text=new_name)
+                except Exception:
+                    pass
+
+        def display_room_details_main(grid_x, grid_y):
+            nonlocal info_display_frame
+            # ensure the info_display_frame exists
+            if info_display_frame is None:
+                return
+            clear_info_display_frame_main()
+            floor = floors.get(current_floor[0])
+            if not floor:
+                return
+            grid_state = floor["grid_state"]
+            cell = grid_state[grid_y][grid_x]
+            if cell is None:
+                return
+            current_name = cell.get('name', '')
+            room_details_content_frame = ctk.CTkFrame(info_display_frame, fg_color="#333333", corner_radius=10)
+            room_details_content_frame.pack(fill="both", expand=True, padx=5, pady=5)
+            room_title = ctk.CTkLabel(room_details_content_frame,
+                                      text=f"Details for Room ({grid_x}, {grid_y})",
+                                      font=(custom_font_family, 18, "bold"),
+                                      text_color="white")
+            room_title.pack(pady=(10, 5))
+            name_label = ctk.CTkLabel(room_details_content_frame,
+                                      text="Room Name:",
+                                      font=(custom_font_family, 14),
+                                      text_color="white")
+            name_label.pack(anchor="w", padx=15, pady=(0, 2))
+            name_entry = ctk.CTkEntry(room_details_content_frame,
+                                      width=250,
+                                      font=(custom_font_family, 14),
+                                      placeholder_text="Enter room name")
+            name_entry.insert(0, current_name)
+            name_entry.pack(padx=15, pady=(0, 10))
+            name_entry.bind("<Return>", lambda event: update_room_name_main(name_entry, grid_x, grid_y))
+            name_entry.bind("<FocusOut>", lambda event: update_room_name_main(name_entry, grid_x, grid_y))
+            placeholder_text = ctk.CTkLabel(room_details_content_frame,
+                                            text="This is where specific data for this room will go.\nYou can add more labels, buttons, or entry fields here.",
+                                            font=(custom_font_family, 14),
+                                            text_color="#AAAAAA",
+                                            wraplength=info_display_frame.winfo_width() - 30)
+            placeholder_text.pack(pady=(5, 10), padx=10)
+
         def refresh_floor_list():
             for widget in floor_list_frame.winfo_children():
                 widget.destroy()
@@ -837,6 +908,11 @@ def setup_main_ui():
                                font=(custom_font_family, 10), wraplength=GRID_SIZE-5, text_color="white")
             lbl.pack(fill="both", expand=True)
             grid_state[grid_y][grid_x] = {'frame': room, 'label': lbl, 'name': initial_name}
+            # clicking a room should show its details in the right-hand panel
+            try:
+                lbl.bind("<Button-1>", lambda e, x=grid_x, y=grid_y: display_room_details_main(x, y))
+            except Exception:
+                pass
             if not is_immovable:
                 room.bind("<Enter>", lambda e: show_adjacent_placeholders())
 
@@ -926,8 +1002,13 @@ def setup_main_ui():
         # UI layout
         main_frame = ctk.CTkFrame(parent_tab, fg_color="#2b2b2b")
         main_frame.pack(fill="both", expand=True, padx=20, pady=(20, 60))
+        # Left: floors list
         floor_list_frame = ctk.CTkFrame(main_frame, fg_color="#1e1e1e", width=120)
         floor_list_frame.pack(side="left", fill="y", padx=(0, 10), pady=10)
+        # Right: info panel for room details
+        info_display_frame = ctk.CTkFrame(main_frame, fg_color="transparent", width=300)
+        info_display_frame.pack(side="right", fill="y", padx=(10, 0), pady=10)
+        # Center: grid container
         grid_container = ctk.CTkFrame(main_frame, fg_color="transparent")
         grid_container.pack(side="left", fill="both", expand=True, padx=10, pady=10)
         grid_canvas = ctk.CTkCanvas(grid_container, bg="#333333", highlightthickness=0)
