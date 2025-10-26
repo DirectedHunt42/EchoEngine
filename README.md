@@ -3,6 +3,7 @@
 </p>
 
 ![Downloads](https://img.shields.io/badge/downloads-0-brightgreen)
+![Commits](https://img.shields.io/github/commit-activity/m/DirectedHunt42/EchoEngine?color=blue)
 
 ## Echo Engine
 
