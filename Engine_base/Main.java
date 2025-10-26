@@ -1408,13 +1408,13 @@ private static void showLogoAndStart(String windowTitle) {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        try {
-            FileWriter myWriter = new FileWriter("Save/Journal.txt");
-            myWriter.write("0");
-            myWriter.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        // try {
+        //     FileWriter myWriter = new FileWriter("Save/Journal.txt");
+        //     myWriter.write("0");
+        //     myWriter.close();
+        // } catch (IOException e) {
+        //     e.printStackTrace();
+        // }
         // Set health to the value in defaulthealth.txt
         String defaultHealth = "20";
         try {
