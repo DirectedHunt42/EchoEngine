@@ -643,8 +643,20 @@ def setup_main_ui():
 
         def display_room_details(grid_x, grid_y):
             nonlocal current_room_details_content_frame
-            clear_info_display_frame()
+            # Reset all room borders to white except the start room
+            for y in range(len(grid_state)):
+                for x in range(len(grid_state[y])):
+                    if grid_state[y][x] is not None:
+                        cell = grid_state[y][x]
+                        is_start = (x == 0 and y == 0)
+                        cell['frame'].configure(border_color="#2638DB" if is_start else "white")
+            
+            # Highlight selected room with blue border
             room_data = grid_state[grid_y][grid_x]
+            if not (grid_x == 0 and grid_y == 0):  # Don't change start room color
+                room_data['frame'].configure(border_color="#321FDD")
+            
+            clear_info_display_frame()
             current_name = room_data['name']
             room_details_content_frame = ctk.CTkFrame(info_display_frame, fg_color="#333333", corner_radius=10)
             room_details_content_frame.pack(fill="both", expand=True, padx=5, pady=5)
@@ -724,7 +736,7 @@ def setup_main_ui():
         def add_room(grid_x, grid_y, is_immovable=False, initial_name="New Room"):
             room_frame = ctk.CTkFrame(grid_container, width=GRID_SIZE, height=GRID_SIZE,
                                       fg_color="#333333", border_width=2,
-                                      border_color="white", corner_radius=0)
+                                      border_color="#2638DB" if is_immovable else "white", corner_radius=0)
             room_frame.place(x=grid_x * GRID_SIZE + grid_canvas.winfo_x(),
                             y=grid_y * GRID_SIZE + grid_canvas.winfo_y())
             room_label = ctk.CTkLabel(room_frame, text=initial_name, fg_color="transparent",
@@ -940,61 +952,36 @@ def setup_main_ui():
             title = ctk.CTkLabel(floor_list_frame, text="Floors", font=(custom_font_family, 16, "bold"))
             title.pack(pady=(10,5))
 
-            # If there's only one floor, use simpler styling
-            if len(floors) == 1:
-                floor_frame = ctk.CTkFrame(floor_list_frame, fg_color="#333333")
-                floor_frame.pack(fill="x", padx=5, pady=2)
+            # Add floor list entries
+            for i in range(len(floors)):
+                floor_frame = ctk.CTkFrame(floor_list_frame, fg_color="transparent")
+                floor_frame.pack(fill="x", pady=2, padx=5)
                 
-                floor_label = ctk.CTkLabel(floor_frame, text=f"Floor 0", 
-                                         font=(custom_font_family, 14))
-                floor_label.pack(side="left", padx=5)
-            else:
-                # Re-add floor buttons in current order with navigation
-                for i in range(len(floors)):
-                    floor_frame = ctk.CTkFrame(floor_list_frame, fg_color="transparent")
-                    floor_frame.pack(fill="x", pady=2, padx=5)
+                # Floor label that can be clicked to switch floors
+                floor_btn = ctk.CTkButton(floor_frame, 
+                                        text=f"Floor {i}",
+                                        command=lambda idx=i: switch_floor(idx),
+                                        fg_color="#2638DB" if i == current_floor[0] else "#333333",
+                                        hover_color="#321FDD" if i == current_floor[0] else "#444444",
+                                        text_color="white")
+                floor_btn.pack(side="left", expand=True, fill="x", padx=(5,5))
+
+                # Remove button if there's more than one floor
+                if len(floors) > 1:
+                    # Add warning tooltip if removing this floor would affect higher floors
+                    tooltip_text = "Warning: Removing this floor will also remove all floors above it!" if i < len(floors) - 1 else None
                     
-                    # Navigation buttons frame (left side)
-                    nav_frame = ctk.CTkFrame(floor_frame, fg_color="transparent")
-                    nav_frame.pack(side="left", padx=(0, 5))
-                    
-                    # Up button
-                    if i > 0:  # Only show up button if not first floor
-                        up_btn = ctk.CTkButton(nav_frame,
-                                            text="↑",
-                                            width=20,
-                                            command=lambda idx=i: reorder_floors(idx, idx-1),
-                                            fg_color="#333333",
-                                            hover_color="#444444")
-                        up_btn.pack(side="left", padx=1)
-                    
-                    # Down button
-                    if i < len(floors) - 1:  # Only show down button if not last floor
-                        down_btn = ctk.CTkButton(nav_frame,
-                                              text="↓",
-                                              width=20,
-                                              command=lambda idx=i: reorder_floors(idx, idx+1),
-                                              fg_color="#333333",
-                                              hover_color="#444444")
-                        down_btn.pack(side="left", padx=1)
-                    
-                    # Floor label/button that can be clicked to switch floors
-                    floor_btn = ctk.CTkButton(floor_frame, 
-                                            text=f"Floor {i}",
-                                            command=lambda idx=i: switch_floor(idx),
-                                            fg_color="#333333" if i != current_floor[0] else "#444444",
-                                            hover_color="#444444")
-                    floor_btn.pack(side="left", expand=True, fill="x", padx=(0,5))
-                    
-                    # Remove button for this floor (right side)
                     remove_btn = ctk.CTkButton(floor_frame,
                                              text="×",
                                              width=30,
                                              command=lambda idx=i: remove_floor(idx),
                                              fg_color="#661111",
                                              hover_color="#881111")
-                    remove_btn.pack(side="right")
-
+                    remove_btn.pack(side="right", padx=5)
+                    
+                    if tooltip_text:
+                        ToolTip(remove_btn, tooltip_text)
+            
             # Add Floor button at the bottom
             add_btn = ctk.CTkButton(floor_list_frame, text="+ Add Floor", command=add_new_floor,
                                   fg_color="#444444", hover_color="#666666")
@@ -1007,6 +994,8 @@ def setup_main_ui():
                     "grid_state": [[None for _ in range(GRID_DIM_X)] for _ in range(GRID_DIM_Y)],
                     "plus_buttons": {},
                 }
+            # Update floor button colors when switching floors
+            refresh_floor_list()
             redraw_floor()
 
         # Variables for drag and drop
@@ -1124,26 +1113,16 @@ def setup_main_ui():
         def remove_floor(floor_idx):
             if len(floors) <= 1:
                 return  # Don't remove the last floor
-                
-            # Remove the floor
-            floors_list = list(sorted(floors.items()))
-            del floors[floor_idx]
+
+            # Remove the target floor and all floors above it
+            floors_list = sorted(floors.items())
+            for i in range(len(floors_list) - 1, floor_idx - 1, -1):
+                del floors[i]
             
-            # Rebuild floors dictionary with updated indices
-            floors.clear()
-            new_idx = 0
-            for _, data in floors_list:
-                if new_idx == floor_idx:
-                    continue
-                floors[new_idx] = data
-                new_idx += 1
-                
             # Update current floor if needed
-            if current_floor[0] == floor_idx:
+            if current_floor[0] >= floor_idx:
                 current_floor[0] = max(0, floor_idx - 1)
-            elif current_floor[0] > floor_idx:
-                current_floor[0] -= 1
-                
+            
             refresh_floor_list()
             redraw_floor()
 
@@ -1241,10 +1220,9 @@ def setup_main_ui():
         def setup_grid_main(event=None):
             nonlocal GRID_DIM_X, GRID_DIM_Y
             grid_canvas.delete("all")
-            canvas_width = grid_container.winfo_width()
-            canvas_height = grid_container.winfo_height()
-            GRID_DIM_X = max(1, canvas_width // GRID_SIZE)
-            GRID_DIM_Y = max(1, canvas_height // GRID_SIZE)
+            # Set constant grid dimensions
+            GRID_DIM_X = 33  # Fixed width of 33 cells
+            GRID_DIM_Y = 20  # Fixed height of 20 cells
             grid_width = GRID_DIM_X * GRID_SIZE
             grid_height = GRID_DIM_Y * GRID_SIZE
             grid_canvas.place(x=0, y=0, width=grid_width, height=grid_height)
@@ -1256,16 +1234,17 @@ def setup_main_ui():
             if not floors:
                 floors[0] = {"grid_state": [[None for _ in range(GRID_DIM_X)] for _ in range(GRID_DIM_Y)],
                              "plus_buttons": {}}
-                add_room_to_floor(0, 0, is_immovable=True, initial_name="Start Room")
-            else:
-                # resize each floor's grid_state to new dims (resetting rooms)
-                for idx in list(floors.keys()):
+            
+            # Ensure start room exists on floor 0
+            if 0 in floors:
+                if floors[0]["grid_state"][0][0] is None:
+                    add_room_to_floor(0, 0, is_immovable=True, initial_name="Start Room")
+            
+            # Resize other floors' grid_state if needed
+            for idx in list(floors.keys()):
+                if idx != 0:  # Skip floor 0 to preserve start room
                     floors[idx]["grid_state"] = [[None for _ in range(GRID_DIM_X)] for _ in range(GRID_DIM_Y)]
                     floors[idx]["plus_buttons"] = {}
-                # add start room to current floor if empty
-                cur = floors[current_floor[0]]
-                if cur["grid_state"][0][0] is None:
-                    add_room_to_floor(0, 0, is_immovable=True, initial_name="Start Room")
             refresh_floor_list()
             show_adjacent_placeholders()
 
