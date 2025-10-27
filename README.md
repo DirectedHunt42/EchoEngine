@@ -1,5 +1,5 @@
 <p align="left">
-  <img src="https://github.com/DirectedHunt42/EchoEngine/blob/main/Engine_editor/Icons/Echo_engine/Echo_engine_transparent.png" alt="Echo Engine Logo" width="350"/>
+  <img src="https://github.com/DirectedHunt42/EchoEngine/blob/main/Engine_editor/Icons/Echo_engine/Echo_engine_transparent.png" alt="Echo Engine Logo" width="250"/>
 </p>
 
 ![Downloads](https://img.shields.io/badge/downloads-0-brightgreen)
