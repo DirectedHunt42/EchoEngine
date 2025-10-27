@@ -959,6 +959,18 @@ def setup_main_ui():
                                              placeholder_text="Enter items, separated by commas")
             items_found_entry.pack(padx=15, pady=(0, 10))
 
+            # Damage Text
+            damage_text_label = ctk.CTkLabel(room_details_content_frame,
+                                             text="Damage Text:",
+                                             font=(custom_font_family, 14),
+                                             text_color="white")
+            damage_text_label.pack(anchor="w", padx=15, pady=(0, 2))
+            damage_text_entry = ctk.CTkEntry(room_details_content_frame,
+                                             width=250,
+                                             font=(custom_font_family, 14),
+                                             placeholder_text="Enter damage text")
+            damage_text_entry.pack(padx=15, pady=(0, 10))
+
             name_entry.bind("<Return>", lambda event: update_room_name_main(name_entry, grid_x, grid_y))
             name_entry.bind("<FocusOut>", lambda event: update_room_name_main(name_entry, grid_x, grid_y))
             placeholder_text = ctk.CTkLabel(room_details_content_frame,
