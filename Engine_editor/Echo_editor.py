@@ -706,7 +706,7 @@ def setup_main_ui():
             name_entry.bind("<Return>", lambda event: update_room_name_tutorial(name_entry, grid_x, grid_y))
             name_entry.bind("<FocusOut>", lambda event: update_room_name_tutorial(name_entry, grid_x, grid_y))
             placeholder_text = ctk.CTkLabel(room_details_content_frame,
-                                            text="This is where specific data for this room will go.\nYou can add more labels, buttons, or entry fields here.",
+                                            text="This is where specific data for this room will go.",
                                             font=(custom_font_family, 14),
                                             text_color="#AAAAAA",
                                             wraplength=info_display_frame.winfo_width() - 30)
@@ -934,10 +934,35 @@ def setup_main_ui():
                                     font=(custom_font_family, 14),
                                     placeholder_text="Enter items, separated by commas")
             items_entry.pack(padx=15, pady=(0, 10))
+
+            # Usable Items Section
+            usable_items_label = ctk.CTkLabel(room_details_content_frame,
+                                             text="Usable Items (comma-separated):",
+                                             font=(custom_font_family, 14),
+                                             text_color="white")
+            usable_items_label.pack(anchor="w", padx=15, pady=(0, 2))
+            usable_items_entry = ctk.CTkEntry(room_details_content_frame,
+                                             width=250,
+                                             font=(custom_font_family, 14),
+                                             placeholder_text="Enter items, separated by commas")
+            usable_items_entry.pack(padx=15, pady=(0, 10))
+
+            # Items found if item used Section
+            items_found_label = ctk.CTkLabel(room_details_content_frame,
+                                             text="Items Found If Used (comma-separated):",
+                                             font=(custom_font_family, 14),
+                                             text_color="white")
+            items_found_label.pack(anchor="w", padx=15, pady=(0, 2))
+            items_found_entry = ctk.CTkEntry(room_details_content_frame,
+                                             width=250,
+                                             font=(custom_font_family, 14),
+                                             placeholder_text="Enter items, separated by commas")
+            items_found_entry.pack(padx=15, pady=(0, 10))
+
             name_entry.bind("<Return>", lambda event: update_room_name_main(name_entry, grid_x, grid_y))
             name_entry.bind("<FocusOut>", lambda event: update_room_name_main(name_entry, grid_x, grid_y))
             placeholder_text = ctk.CTkLabel(room_details_content_frame,
-                                            text="This is where specific data for this room will go.\nYou can add more labels, buttons, or entry fields here.",
+                                            text="This is where specific data for this room will go.",
                                             font=(custom_font_family, 14),
                                             text_color="#AAAAAA",
                                             wraplength=info_display_frame.winfo_width() - 30)
