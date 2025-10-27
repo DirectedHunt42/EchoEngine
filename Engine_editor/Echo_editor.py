@@ -110,6 +110,7 @@ def setup_main_ui():
     RETURN_HOVER = "#E04F4F"
     ABOUT_COLOR = "#2638DB"
     ABOUT_HOVER = "#321FDD"
+    LOADED_COLOR = "#006400"  # Dark green for loaded fields
 
     # ---------- Tabs ----------
     game_setup_tab = tab_view.add("Game Setup")
@@ -177,7 +178,6 @@ def setup_main_ui():
                 label_widget.configure(text="")
                 entry_widget.configure(fg_color="#444444")
 
-
         def validate_int(event=None):
             if int_only:
                 val = entry.get()
@@ -234,10 +234,10 @@ def setup_main_ui():
         err_text_lbl = ctk.CTkLabel(container, text="", font=(custom_font_family,10), text_color="red")
         err_text_lbl.pack(fill="x", pady=(2,0), padx=(35,0))
 
-        def toggle(var1,var2):
+        def toggle(var1, var2):
             if var1.get() == 1: var2.set(0)
-        path_chk.configure(command=lambda: toggle(path_var,text_var))
-        text_chk.configure(command=lambda: toggle(text_var,path_var))
+        path_chk.configure(command=lambda: toggle(path_var, text_var))
+        text_chk.configure(command=lambda: toggle(text_var, path_var))
 
         def validate_path(entry_widget, label_widget, valid_ext=None, field_name=None):
             if valid_ext is None:
@@ -298,7 +298,6 @@ def setup_main_ui():
     inputs["Tutorial Items"] = add_input(scroll_frame, "Tutorial Items:", tooltip_text="Tutorial will finish when these items are collected - Enter each item with commas in between e.g. Item1,Item2")
 
     # ========================= Save & Load Logic =========================
-    # Hardcoded relative paths
     save_paths = {
         "Title": r"../Working_game/Text/Misc/Title.txt",
         "Font": r"../Working_game/Fonts/Font.ttf",
@@ -324,64 +323,45 @@ def setup_main_ui():
     }
 
     def load_and_highlight_existing():
-        # """Checks for existing saved files and updates the UI accordingly."""
-        LOADED_COLOR = "#006400" # A dark green color
-
         for key, rel_path in save_paths.items():
             full_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), rel_path)
             widget = inputs[key]
 
-            # Check if file exists
             if os.path.exists(full_path):
                 is_text_file = full_path.lower().endswith('.txt')
                 file_has_content = os.path.getsize(full_path) > 0
 
-                # Determine if the field should be marked as "loaded"
                 should_highlight = False
                 if is_text_file:
-                    # For text files, check if the file has content
                     if file_has_content:
                         should_highlight = True
                 else:
-                    # For all other file types, just check if the file exists
                     should_highlight = True
                 
                 if should_highlight:
                     try:
-                        # Handle standard text entry fields
                         if isinstance(widget, ctk.CTkEntry):
-                            # For simple text fields, read content directly
                             if is_text_file:
                                 with open(full_path, 'r', encoding='utf-8') as f:
                                     content = f.read()
                                     widget.delete(0, "end")
                                     widget.insert(0, content)
-                            # Change the background color to green
                             widget.configure(fg_color=LOADED_COLOR)
 
-                        # Handle the complex text-or-path widgets
                         elif isinstance(widget, tuple) and len(widget) == 6:
                             path_entry, textbox, path_var, text_var, _, _ = widget
-                            
-                            # Read content from the text file
                             with open(full_path, 'r', encoding='utf-8') as f:
                                 content = f.read()
-                            
-                            # Set to 'text' mode and load content into the textbox
                             text_var.set(1)
                             path_var.set(0)
                             textbox.delete("1.0", "end")
                             textbox.insert("1.0", content)
-                            
-                            # Set the background to green
                             textbox.configure(fg_color=LOADED_COLOR)
-                            # Reset the path field color
                             path_entry.configure(fg_color="#444444")
                             
                     except Exception as e:
                         print(f"Error reading {key} file: {e}")
                 else:
-                    # File exists but is empty (only for text files), reset to default
                     if isinstance(widget, ctk.CTkEntry):
                         widget.configure(fg_color="#444444")
                         widget.delete(0, "end")
@@ -393,57 +373,42 @@ def setup_main_ui():
                         path_var.set(1)
                         text_var.set(0)
             else:
-                # If the file doesn't exist, reset to default colors
                 if isinstance(widget, ctk.CTkEntry):
                     widget.configure(fg_color="#444444")
                 elif isinstance(widget, tuple) and len(widget) == 6:
                     path_entry, textbox, path_var, text_var, _, _ = widget
                     path_entry.configure(fg_color="#444444")
                     textbox.configure(fg_color="#444444")
-                    # Set the default choice to path
                     path_var.set(1)
                     text_var.set(0)
 
     def validate_and_save():
-        # Define which entry fields must always be filled
         required_text_fields = ["Title", "Base Health", "Damage Chance"]
-        # **MODIFIED**: Fonts are now optional
         required_file_fields = []
         optional_file_fields = ["Font", "Title Font", "Music", "Icon"]
 
         errors = []
         for key, widget in inputs.items():
             path = os.path.join(os.path.dirname(__file__), save_paths[key])
-            os.makedirs(os.path.dirname(path), exist_ok=True)  # Ensure folder exists
+            os.makedirs(os.path.dirname(path), exist_ok=True)
 
-            # --- Entries ---
             if isinstance(widget, ctk.CTkEntry):
                 value = widget.get().strip()
 
-                # New logic for "Win Location", "Win Items", and "Tutorial Items"
                 if key == "Win Location":
-                    # Check for empty input
                     if not value:
                         errors.append(f"{key} is required.")
                         widget.configure(fg_color="#661111")
                         continue
-                    
-                    # Check for "double commas" or commas at start/end
                     if ",," in value or value.startswith(',') or value.endswith(','):
                         errors.append(f"{key}: Invalid format. Avoid adjacent commas.")
                         widget.configure(fg_color="#661111")
                         continue
-                    
-                    # Split by comma and clean up spaces
                     coords = [c.strip() for c in value.split(',')]
-                    
-                    # Check if there are exactly 3 parts and all are numbers
                     if len(coords) != 3 or not all(c.isdigit() or (c.startswith('-') and c[1:].isdigit()) for c in coords):
                         errors.append(f"{key}: Must have exactly three numbers (e.g., X,Y,Z).")
                         widget.configure(fg_color="#661111")
                         continue
-                    
-                    # If valid, format for saving (one per line)
                     save_value = "\n".join(coords)
                     with open(path, "w", encoding="utf-8") as f:
                         f.write(save_value)
@@ -451,9 +416,7 @@ def setup_main_ui():
                     continue
 
                 elif key in ["Win Items", "Tutorial Items"]:
-                    # Split by comma and save each item on a new line
                     items = [item.strip() for item in value.split(',')]
-                    # Filter out any empty strings that might result from trailing commas or spaces
                     valid_items = [item for item in items if item]
                     save_value = "\n".join(valid_items)
                     with open(path, "w", encoding="utf-8") as f:
@@ -461,8 +424,6 @@ def setup_main_ui():
                     widget.configure(fg_color="#444444")
                     continue
 
-                # Old logic for other fields (no changes here)
-                # ---------- Required Text ----------
                 if key in required_text_fields:
                     if not value:
                         errors.append(f"{key} is required.")
@@ -477,7 +438,6 @@ def setup_main_ui():
                     with open(path, "w", encoding="utf-8") as f:
                         f.write(value)
 
-                # ---------- Required File ----------
                 elif key in required_file_fields:
                     if not value:
                         errors.append(f"{key} is required.")
@@ -494,7 +454,6 @@ def setup_main_ui():
                     widget.configure(fg_color="#444444")
                     shutil.copy(value, path)
 
-                # ---------- Optional File ----------
                 elif key in optional_file_fields:
                     if value:
                         if not os.path.exists(value):
@@ -538,7 +497,6 @@ def setup_main_ui():
                             os.remove(path)
                         widget.configure(fg_color="#444444")
 
-                # ---------- Default to plain text (optional) ----------
                 else:
                     if value:
                         widget.configure(fg_color="#444444")
@@ -547,7 +505,6 @@ def setup_main_ui():
                     else:
                         widget.configure(fg_color="#444444")
 
-            # --- Text sections ---
             elif isinstance(widget, tuple) and len(widget) == 6:
                 path_entry, textbox, path_var, text_var, err_path_lbl, err_text_lbl = widget
                 if path_var.get():
@@ -567,7 +524,6 @@ def setup_main_ui():
                         path_entry.configure(fg_color="#661111")
                         err_path_lbl.configure(text="Invalid file type")
                         continue
-                    # Instead of copying, read text and save it
                     with open(src, "r", encoding="utf-8") as f_in, open(path, "w", encoding="utf-8") as f_out:
                         f_out.write(f_in.read())
                     path_entry.configure(fg_color="#444444")
@@ -591,7 +547,6 @@ def setup_main_ui():
         if errors:
             CTkMessagebox(title="Validation Error", message="\n".join(errors), icon="cancel")
         else:
-            # On successful save, update the colors to green
             load_and_highlight_existing()
             CTkMessagebox(title="Success", message="All fields validated and saved!", icon="check")
 
@@ -604,31 +559,22 @@ def setup_main_ui():
                                  command=validate_and_save)
     save_button.place(relx=0.5, rely=1.0, anchor="s", y=-10)
     save_tutorial_button = ctk.CTkButton(tutorial_tab, text="Save", font=(custom_font_family,14),
-                                 fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black",
-                                 )
+                                 fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black")
     save_tutorial_button.place(relx=0.5, rely=1.0, anchor="s", y=-10)
     save_main_level_button = ctk.CTkButton(main_level_tab, text="Save", font=(custom_font_family,14),
-                                 fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black",
-                                 )
+                                 fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black")
     save_main_level_button.place(relx=0.5, rely=1.0, anchor="s", y=-10)
 
-   # ========================= Tutorial Tab =========================
+    # ========================= Tutorial Tab =========================
     def setup_tutorial_tab(parent_tab, custom_font_family="Arial"):
-        # Single-floor grid editor (right: grid)
         GRID_SIZE = 40
-        GRID_DIM_X, GRID_DIM_Y = 0, 0
+        GRID_DIM_X, GRID_DIM_Y = 33, 20
+        BACKGROUND_COLOR = "#333333"
+        LOADED_COLOR = "#006400"
 
-        # Simplified data structure for a single floor
         grid_state = []
         plus_buttons = {}
-
-        # Info display on the right side of the editor
         info_display_frame = None
-        
-        # --- CONSTANT FOR BACKGROUND/ROOM COLOR ---
-        # Use the same color for the canvas background and the room fill 
-        # to make the grid lines disappear, relying only on the cell borders.
-        BACKGROUND_COLOR = "#333333"
 
         def clear_info_display_frame_tutorial():
             nonlocal info_display_frame
@@ -649,7 +595,6 @@ def setup_main_ui():
             if cell is None:
                 return
             cell['name'] = new_name
-            # update label if it exists
             if 'label' in cell and cell['label']:
                 try:
                     cell['label'].configure(text=new_name)
@@ -658,8 +603,6 @@ def setup_main_ui():
 
         def display_room_details_tutorial(grid_x, grid_y):
             nonlocal info_display_frame
-            nonlocal grid_state
-            # ensure the info_display_frame exists
             if info_display_frame is None:
                 return
             clear_info_display_frame_tutorial()
@@ -683,16 +626,14 @@ def setup_main_ui():
                                     font=(custom_font_family, 14),
                                     text_color="white")
             name_label.pack(anchor="w", padx=15, pady=(0, 2))
-            # Room Name Section
             name_entry = ctk.CTkEntry(room_details_content_frame,
                                     width=250,
                                     font=(custom_font_family, 14),
-                                    placeholder_text="Enter room name")
-            # Room Name (pack first so other sections are visible and layout is stable)
+                                    placeholder_text="Enter room name",
+                                    fg_color=LOADED_COLOR if cell.get('loaded', False) else "#444444")
             name_entry.insert(0, current_name)
             name_entry.pack(padx=15, pady=(0, 10))
 
-            # Room Description Section
             desc_label = ctk.CTkLabel(room_details_content_frame,
                                     text="Room Description:",
                                     font=(custom_font_family, 14),
@@ -702,11 +643,10 @@ def setup_main_ui():
                                     width=250,
                                     height=100,
                                     font=(custom_font_family, 14),
-                                    fg_color="#444444")
+                                    fg_color=LOADED_COLOR if cell.get('loaded', False) else "#444444")
             desc_text.insert("1.0", cell.get('desc', ''))
             desc_text.pack(padx=15, pady=(0, 10))
 
-            # Findable Items Section
             items_label = ctk.CTkLabel(room_details_content_frame,
                                     text="Findable Items (comma-separated):",
                                     font=(custom_font_family, 14),
@@ -715,7 +655,8 @@ def setup_main_ui():
             items_entry = ctk.CTkEntry(room_details_content_frame,
                                     width=250,
                                     font=(custom_font_family, 14),
-                                    placeholder_text="Enter items, separated by commas")
+                                    placeholder_text="Enter items, separated by commas",
+                                    fg_color=LOADED_COLOR if cell.get('loaded', False) else "#444444")
             items_entry.insert(0, cell.get('findable_items', ''))
             items_entry.pack(padx=15, pady=(0, 10))
 
@@ -736,21 +677,17 @@ def setup_main_ui():
                                             wraplength=info_display_frame.winfo_width() - 30)
             placeholder_text.pack(pady=(5, 10), padx=10)
 
-        # All floor management functions (refresh_floor_list, switch_floor, drag/drop, remove_floor, add_new_floor) are removed.
-
-        def add_room_tutorial(grid_x, grid_y, is_immovable=False, initial_name="Room"):
+        def add_room_tutorial(grid_x, grid_y, is_immovable=False, initial_name="Room", loaded=False):
             nonlocal grid_state
-            # create visual room
             room = ctk.CTkFrame(grid_container, width=GRID_SIZE, height=GRID_SIZE,
-                                fg_color=BACKGROUND_COLOR, border_width=2, # Use BACKGROUND_COLOR for fg_color
-                                border_color="white", corner_radius=0)      # Keep white border
+                                fg_color=BACKGROUND_COLOR, border_width=2,
+                                border_color="white", corner_radius=0)
             room.place(x=grid_x * GRID_SIZE + grid_canvas.winfo_x(),
                     y=grid_y * GRID_SIZE + grid_canvas.winfo_y())
             lbl = ctk.CTkLabel(room, text=initial_name, fg_color="transparent",
                             font=(custom_font_family, 10), wraplength=GRID_SIZE-5, text_color="white")
             lbl.pack(fill="both", expand=True)
-            grid_state[grid_y][grid_x] = {'frame': room, 'label': lbl, 'name': initial_name}
-            # clicking a room should show its details in the right-hand panel
+            grid_state[grid_y][grid_x] = {'frame': room, 'label': lbl, 'name': initial_name, 'loaded': loaded}
             try:
                 lbl.bind("<Button-1>", lambda e, x=grid_x, y=grid_y: display_room_details_tutorial(x, y))
             except Exception:
@@ -765,7 +702,6 @@ def setup_main_ui():
         def show_adjacent_placeholders_tutorial():
             nonlocal grid_state
             nonlocal plus_buttons
-            # clear old
             for b in list(plus_buttons.values()):
                 try:
                     b.destroy()
@@ -773,9 +709,6 @@ def setup_main_ui():
                     pass
             plus_buttons.clear()
             
-            # Logic for checking floor below is removed.
-
-            # Add plus buttons around existing rooms on current floor
             directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
             for y in range(GRID_DIM_Y):
                 for x in range(GRID_DIM_X):
@@ -786,10 +719,9 @@ def setup_main_ui():
                                 if grid_state[ny][nx] is None:
                                     key = (nx, ny)
                                     if key not in plus_buttons:
-                                        # Change plus button border_width and border_color to match rooms
                                         btn = ctk.CTkButton(grid_container, text="+", width=GRID_SIZE, height=GRID_SIZE,
                                                             corner_radius=0, fg_color=BACKGROUND_COLOR, hover_color="#555555",
-                                                            border_width=2, border_color="white", 
+                                                            border_width=2, border_color="white",
                                                             command=lambda gx=nx, gy=ny: place_room_tutorial(gx, gy))
                                         btn.place(x=nx * GRID_SIZE + grid_canvas.winfo_x(),
                                                 y=ny * GRID_SIZE + grid_canvas.winfo_y())
@@ -797,7 +729,6 @@ def setup_main_ui():
 
         def redraw_grid_tutorial():
             nonlocal grid_state
-            # clear existing widgets except canvas
             for w in grid_container.winfo_children():
                 if w != grid_canvas:
                     try:
@@ -812,62 +743,85 @@ def setup_main_ui():
                 for x in range(GRID_DIM_X):
                     cell = grid_state[y][x]
                     if cell is not None:
-                        # re-create visual room
-                        add_room_tutorial(x, y, is_immovable=True, initial_name=cell.get('name', 'Room'))
+                        add_room_tutorial(x, y, is_immovable=True, initial_name=cell.get('name', 'Room'), loaded=cell.get('loaded', False))
             show_adjacent_placeholders_tutorial()
 
+        def load_tutorial_data():
+            nonlocal grid_state
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            tutorial_dir = os.path.join(script_dir, "../Working_game/Text/Room_descriptions/Tutorial")
+            
+            grid_state = [[None for _ in range(GRID_DIM_X)] for _ in range(GRID_DIM_Y)]
+            
+            if os.path.exists(tutorial_dir):
+                for folder in os.listdir(tutorial_dir):
+                    if folder.startswith('y') and '_x' in folder:
+                        try:
+                            y_str, x_str = folder.split('_')
+                            y = int(y_str[1:]) - 1
+                            x = int(x_str[1:]) - 1
+                            if 0 <= x < GRID_DIM_X and 0 <= y < GRID_DIM_Y:
+                                room_dir = os.path.join(tutorial_dir, folder)
+                                cell = {'loaded': True}
+                                
+                                # Description.txt
+                                desc_path = os.path.join(room_dir, "Description.txt")
+                                if os.path.exists(desc_path) and os.path.getsize(desc_path) > 0:
+                                    with open(desc_path, 'r', encoding='utf-8') as f:
+                                        lines = f.read().splitlines()
+                                        if lines:
+                                            cell['name'] = lines[0]
+                                            if len(lines) > 2 and lines[1] == '-----':
+                                                cell['desc'] = '\n'.join(lines[2:])
+                                            else:
+                                                cell['desc'] = ''
+                                
+                                # Items.txt
+                                items_path = os.path.join(room_dir, "Items.txt")
+                                if os.path.exists(items_path) and os.path.getsize(items_path) > 0:
+                                    with open(items_path, 'r', encoding='utf-8') as f:
+                                        items = f.read().splitlines()
+                                        cell['findable_items'] = ','.join([i for i in items if i.strip()])
+                                
+                                grid_state[y][x] = cell
+                        except (ValueError, IndexError):
+                            continue
+            
+            if grid_state[0][0] is None:
+                grid_state[0][0] = {'name': 'Start Room', 'desc': '', 'findable_items': '', 'loaded': False}
+            
+            redraw_grid_tutorial()
+
         def setup_grid_tutorial(event=None):
-            nonlocal GRID_DIM_X, GRID_DIM_Y
             nonlocal grid_state
             grid_canvas.delete("all")
-            # Set constant grid dimensions
-            GRID_DIM_X = 33 # Fixed width of 33 cells
-            GRID_DIM_Y = 20 # Fixed height of 20 cells
             grid_width = GRID_DIM_X * GRID_SIZE
             grid_height = GRID_DIM_Y * GRID_SIZE
             grid_canvas.place(x=0, y=0, width=grid_width, height=grid_height)
             
-            # --- REMOVED GRID DRAWING LOGIC ---
-            # for x in range(0, grid_width, GRID_SIZE):
-            #     grid_canvas.create_line(x, 0, x, grid_height, fill="#555555")
-            # for y in range(0, grid_height, GRID_SIZE):
-            #     grid_canvas.create_line(0, y, grid_width, y, fill="#555555")
-            
-            # ensure grid_state is initialized
             if not grid_state:
                 grid_state = [[None for _ in range(GRID_DIM_X)] for _ in range(GRID_DIM_Y)]
-                
-            # Ensure start room exists
-            if grid_state[0][0] is None:
-                add_room_tutorial(0, 0, is_immovable=True, initial_name="Start Room")
-                
-            # All logic for resizing other floors is removed.
-            show_adjacent_placeholders_tutorial()
+                load_tutorial_data()
+            else:
+                redraw_grid_tutorial()
 
-        # UI layout
         main_frame = ctk.CTkFrame(parent_tab, fg_color="#2b2b2b")
         main_frame.pack(fill="both", expand=True, padx=20, pady=(20, 60))
         
-        # Left: floors list is REMOVED
-        
-        # Right: info panel for room details
         info_display_frame = ctk.CTkFrame(main_frame, fg_color="transparent", width=300)
         info_display_frame.pack(side="right", fill="y", padx=(10, 0), pady=10)
         
-        # Center: grid container (now takes up the left and center space)
         grid_container = ctk.CTkFrame(main_frame, fg_color="transparent")
         grid_container.pack(side="left", fill="both", expand=True, padx=(0, 10), pady=10)
         
-        grid_canvas = ctk.CTkCanvas(grid_container, bg=BACKGROUND_COLOR, highlightthickness=0) # Use the same color
+        grid_canvas = ctk.CTkCanvas(grid_container, bg=BACKGROUND_COLOR, highlightthickness=0)
         grid_canvas.pack(fill="both", expand=True)
         grid_container.bind("<Configure>", setup_grid_tutorial)
 
-        # initialize
-        setup_grid_tutorial()
+        load_tutorial_data()
 
         def save_tutorial():
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            # Root folder for saving (comment: this is the root folder)
             root_folder = os.path.join(script_dir, "../Working_game")
             tutorial_dir = os.path.join(root_folder, "Text/Room_descriptions/Tutorial")
             if os.path.exists(tutorial_dir):
@@ -881,20 +835,17 @@ def setup_main_ui():
                         room_dir = os.path.join(tutorial_dir, f"y{y+1}_x{x+1}")
                         os.makedirs(room_dir)
 
-                        # Description.txt
                         name = cell.get('name', '')
                         desc = cell.get('desc', '')
                         with open(os.path.join(room_dir, "Description.txt"), "w", encoding="utf-8") as f:
                             f.write(f"{name}\n-----\n{desc}")
 
-                        # Items.txt (findable items, one per line)
                         items_str = cell.get('findable_items', '')
                         if items_str:
                             items = [i.strip() for i in items_str.split(',') if i.strip()]
                             with open(os.path.join(room_dir, "Items.txt"), "w", encoding="utf-8") as f:
                                 f.write("\n".join(items))
 
-                        # Autogenerate Exits.txt
                         exits = []
                         directions = {
                             "north": (x, y-1),
@@ -913,20 +864,17 @@ def setup_main_ui():
 
         return save_tutorial
 
+    # ========================= Main Level Tab =========================
     def setup_main_level_tab(parent_tab, custom_font_family="Arial"):
-        # Multi-floor grid editor (left: floors, right: grid)
         GRID_SIZE = 40
-        GRID_DIM_X, GRID_DIM_Y = 0, 0
-        
-        # --- CONSTANTS FOR COLOR CONSISTENCY ---
+        GRID_DIM_X, GRID_DIM_Y = 33, 20
         BACKGROUND_COLOR = "#333333"
         BORDER_WIDTH = 2
         BORDER_COLOR = "white"
+        LOADED_COLOR = "#006400"
 
-        floors = {} # floor_index -> {"grid_state": [[None]], "plus_buttons": {}}
+        floors = {}
         current_floor = [0]
-
-        # Info display on the right side of the main-level editor
         info_display_frame = None
 
         def clear_info_display_frame_main():
@@ -949,7 +897,6 @@ def setup_main_ui():
             if cell is None:
                 return
             cell['name'] = new_name
-            # update label if it exists
             if 'label' in cell and cell['label']:
                 try:
                     cell['label'].configure(text=new_name)
@@ -958,7 +905,6 @@ def setup_main_ui():
 
         def display_room_details_main(grid_x, grid_y):
             nonlocal info_display_frame
-            # ensure the info_display_frame exists
             if info_display_frame is None:
                 return
             clear_info_display_frame_main()
@@ -982,16 +928,14 @@ def setup_main_ui():
                                     font=(custom_font_family, 14),
                                     text_color="white")
             name_label.pack(anchor="w", padx=15, pady=(0, 2))
-            # Room Name Section
             name_entry = ctk.CTkEntry(room_details_content_frame,
                                     width=250,
                                     font=(custom_font_family, 14),
-                                    placeholder_text="Enter room name")
-            # Room Name (pack first so other sections are visible and layout is stable)
+                                    placeholder_text="Enter room name",
+                                    fg_color=LOADED_COLOR if cell.get('loaded', False) else "#444444")
             name_entry.insert(0, current_name)
             name_entry.pack(padx=15, pady=(0, 10))
 
-            # Room Description Section
             desc_label = ctk.CTkLabel(room_details_content_frame,
                                     text="Room Description:",
                                     font=(custom_font_family, 14),
@@ -1001,11 +945,10 @@ def setup_main_ui():
                                     width=250,
                                     height=100,
                                     font=(custom_font_family, 14),
-                                    fg_color="#444444")
+                                    fg_color=LOADED_COLOR if cell.get('loaded', False) else "#444444")
             desc_text.insert("1.0", cell.get('desc', ''))
             desc_text.pack(padx=15, pady=(0, 10))
 
-            # Findable Items Section
             items_label = ctk.CTkLabel(room_details_content_frame,
                                     text="Findable Items (comma-separated):",
                                     font=(custom_font_family, 14),
@@ -1014,11 +957,11 @@ def setup_main_ui():
             items_entry = ctk.CTkEntry(room_details_content_frame,
                                     width=250,
                                     font=(custom_font_family, 14),
-                                    placeholder_text="Enter items, separated by commas")
+                                    placeholder_text="Enter items, separated by commas",
+                                    fg_color=LOADED_COLOR if cell.get('loaded', False) else "#444444")
             items_entry.insert(0, cell.get('findable_items', ''))
             items_entry.pack(padx=15, pady=(0, 10))
 
-            # Usable Items Section
             usable_items_label = ctk.CTkLabel(room_details_content_frame,
                                             text="Usable Items (one per room):",
                                             font=(custom_font_family, 14),
@@ -1027,11 +970,11 @@ def setup_main_ui():
             usable_items_entry = ctk.CTkEntry(room_details_content_frame,
                                             width=250,
                                             font=(custom_font_family, 14),
-                                            placeholder_text="Enter item")
+                                            placeholder_text="Enter item",
+                                            fg_color=LOADED_COLOR if cell.get('loaded', False) else "#444444")
             usable_items_entry.insert(0, cell.get('usable_item', ''))
             usable_items_entry.pack(padx=15, pady=(0, 10))
 
-            #Text when item used
             item_used_text_label = ctk.CTkLabel(room_details_content_frame,
                                             text="Text When Item Used:",
                                             font=(custom_font_family, 14),
@@ -1041,11 +984,10 @@ def setup_main_ui():
                                             width=250,
                                             height=100,
                                             font=(custom_font_family, 14),
-                                            fg_color="#444444")
+                                            fg_color=LOADED_COLOR if cell.get('loaded', False) else "#444444")
             item_used_text_entry.insert("1.0", cell.get('item_used_text', ''))
             item_used_text_entry.pack(padx=15, pady=(0, 10))
 
-            # Items found if item used Section
             items_found_label = ctk.CTkLabel(room_details_content_frame,
                                             text="Items Found If Used (one per room):",
                                             font=(custom_font_family, 14),
@@ -1054,11 +996,11 @@ def setup_main_ui():
             items_found_entry = ctk.CTkEntry(room_details_content_frame,
                                             width=250,
                                             font=(custom_font_family, 14),
-                                            placeholder_text="Enter item")
+                                            placeholder_text="Enter item",
+                                            fg_color=LOADED_COLOR if cell.get('loaded', False) else "#444444")
             items_found_entry.insert(0, cell.get('item_found', ''))
             items_found_entry.pack(padx=15, pady=(0, 10))
 
-            # Damage Text
             damage_text_label = ctk.CTkLabel(room_details_content_frame,
                                             text="Damage Text:",
                                             font=(custom_font_family, 14),
@@ -1068,7 +1010,7 @@ def setup_main_ui():
                                             width=250,
                                             height=100,
                                             font=(custom_font_family, 14),
-                                            fg_color="#444444")
+                                            fg_color=LOADED_COLOR if cell.get('loaded', False) else "#444444")
             damage_text_entry.insert("1.0", cell.get('damage_text', ''))
             damage_text_entry.pack(padx=15, pady=(0, 10))
 
@@ -1106,20 +1048,16 @@ def setup_main_ui():
             placeholder_text.pack(pady=(5, 10), padx=10)
 
         def refresh_floor_list():
-            # Clear existing buttons
             for widget in floor_list_frame.winfo_children():
                 widget.destroy()
 
-            # Title
             title = ctk.CTkLabel(floor_list_frame, text="Floors", font=(custom_font_family, 16, "bold"))
             title.pack(pady=(10,5))
 
-            # Add floor list entries
-            for i in range(len(floors)):
+            for i in sorted(floors.keys()):
                 floor_frame = ctk.CTkFrame(floor_list_frame, fg_color="transparent")
                 floor_frame.pack(fill="x", pady=2, padx=5)
                 
-                # Floor label that can be clicked to switch floors
                 floor_btn = ctk.CTkButton(floor_frame, 
                                         text=f"Floor {i}",
                                         command=lambda idx=i: switch_floor(idx),
@@ -1128,34 +1066,18 @@ def setup_main_ui():
                                         text_color="white")
                 floor_btn.pack(side="left", expand=True, fill="x", padx=(5,5))
 
-                # Remove button if there's more than one floor
                 if len(floors) > 1:
-                    # Add warning tooltip if removing this floor would affect higher floors
-                    tooltip_text = "Warning: Removing this floor will also remove all floors above it!" if i < len(floors) - 1 else None
-                    
-                    # NOTE: ToolTip is not defined in the provided code, so assuming it's an external utility
-                    try:
-                        remove_btn = ctk.CTkButton(floor_frame,
-                                                text="×",
-                                                width=30,
-                                                command=lambda idx=i: remove_floor(idx),
-                                                fg_color="#661111",
-                                                hover_color="#881111")
-                        remove_btn.pack(side="right", padx=5)
-                        
-                        if tooltip_text:
-                            # Assuming ToolTip exists, otherwise this will error
-                            ToolTip(remove_btn, tooltip_text) 
-                    except NameError:
-                        remove_btn = ctk.CTkButton(floor_frame,
-                                                text="×",
-                                                width=30,
-                                                command=lambda idx=i: remove_floor(idx),
-                                                fg_color="#661111",
-                                                hover_color="#881111")
-                        remove_btn.pack(side="right", padx=5)
+                    tooltip_text = "Warning: Removing this floor will also remove all floors above it!" if i < max(floors.keys()) else None
+                    remove_btn = ctk.CTkButton(floor_frame,
+                                            text="×",
+                                            width=30,
+                                            command=lambda idx=i: remove_floor(idx),
+                                            fg_color="#661111",
+                                            hover_color="#881111")
+                    remove_btn.pack(side="right", padx=5)
+                    if tooltip_text:
+                        ToolTip(remove_btn, tooltip_text)
                 
-            # Add Floor button at the bottom
             add_btn = ctk.CTkButton(floor_list_frame, text="+ Add Floor", command=add_new_floor,
                                     fg_color="#444444", hover_color="#666666")
             add_btn.pack(pady=10)
@@ -1167,73 +1089,13 @@ def setup_main_ui():
                     "grid_state": [[None for _ in range(GRID_DIM_X)] for _ in range(GRID_DIM_Y)],
                     "plus_buttons": {},
                 }
-            # Update floor button colors when switching floors
             refresh_floor_list()
             redraw_floor()
 
-        # Variables for drag and drop
-        drag_data = {"start_y": 0, "source_idx": None}
-
-        def start_drag(event, floor_idx):
-            drag_data["start_y"] = event.y_root
-            drag_data["source_idx"] = floor_idx
-            
-        def handle_drag(event, floor_idx):
-            if drag_data["source_idx"] is None:
-                return
-                
-            # Calculate the target position based on mouse position
-            for widget in floor_list_frame.winfo_children()[:-1]:  # Exclude add button
-                if isinstance(widget, ctk.CTkFrame):
-                    widget_y = widget.winfo_rooty()
-                    widget_height = widget.winfo_height()
-                    if widget_y <= event.y_root <= widget_y + widget_height:
-                        # Find the index of the frame containing the floor button
-                        try:
-                            target_idx = floor_list_frame.winfo_children().index(widget) - 1 # -1 because of the "Floors" title label
-                        except ValueError:
-                            continue # Should not happen
-                            
-                        if target_idx != drag_data["source_idx"] and target_idx >= 0:
-                            reorder_floors(drag_data["source_idx"], target_idx)
-                            drag_data["source_idx"] = target_idx # Update source index after reorder
-                            break
-
-        def end_drag(event, floor_idx):
-            drag_data["source_idx"] = None
-
-        def reorder_floors(old_idx, new_idx):
-            if old_idx == new_idx:
-                return
-
-            # Update the floors dictionary
-            floors_list = [(i, data) for i, data in sorted(floors.items())]
-            floor_to_move = floors_list.pop(old_idx)
-            floors_list.insert(new_idx, floor_to_move)
-            
-            # Rebuild floors dictionary with new order
-            floors.clear()
-            for new_idx_key, (_, data) in enumerate(floors_list):
-                floors[new_idx_key] = data
-
-            # Update current floor index if needed
-            if current_floor[0] == old_idx:
-                current_floor[0] = new_idx
-            elif old_idx < new_idx:
-                if current_floor[0] > old_idx and current_floor[0] <= new_idx:
-                    current_floor[0] -= 1
-            else:
-                if current_floor[0] >= new_idx and current_floor[0] < old_idx:
-                    current_floor[0] += 1
-
-            refresh_floor_list()
-
         def remove_floor(floor_idx):
             if len(floors) <= 1:
-                return  # Don't remove the last floor
+                return
 
-            # Remove the target floor and all floors above it
-            # The original code's remove_floor logic needs to be respected (remove target and all above)
             floors_to_keep = {}
             for idx, data in sorted(floors.items()):
                 if idx < floor_idx:
@@ -1242,14 +1104,12 @@ def setup_main_ui():
             floors.clear()
             floors.update(floors_to_keep)
             
-            # Re-index the remaining floors
             new_floors = {}
             for new_idx, (_, data) in enumerate(sorted(floors.items())):
                 new_floors[new_idx] = data
             floors.clear()
             floors.update(new_floors)
             
-            # Update current floor if needed
             if current_floor[0] >= floor_idx:
                 current_floor[0] = max(0, len(floors) - 1)
                 
@@ -1257,7 +1117,7 @@ def setup_main_ui():
             redraw_floor()
 
         def add_new_floor():
-            new_index = len(floors)
+            new_index = max(floors.keys()) + 1 if floors else 0
             floors[new_index] = {
                 "grid_state": [[None for _ in range(GRID_DIM_X)] for _ in range(GRID_DIM_Y)],
                 "plus_buttons": {},
@@ -1265,18 +1125,9 @@ def setup_main_ui():
             refresh_floor_list()
             switch_floor(new_index)
 
-        # NOTE: The provided code contains two copies of reorder_floors and remove_floor.
-        # I have kept the first version of reorder_floors and the second (more complex)
-        # version of remove_floor which handles the "remove floor and all above" logic.
-        # The drag/drop logic (start_drag, handle_drag, end_drag) is currently not
-        # fully wired to the buttons in refresh_floor_list, but I'll leave the functions
-        # as they were in the original source, focusing only on the visual changes.
-
-
-        def add_room_to_floor(grid_x, grid_y, is_immovable=False, initial_name="Room"):
+        def add_room_to_floor(grid_x, grid_y, is_immovable=False, initial_name="Room", loaded=False):
             floor = floors[current_floor[0]]
             grid_state = floor["grid_state"]
-            # create visual room
             room = ctk.CTkFrame(grid_container, width=GRID_SIZE, height=GRID_SIZE,
                                 fg_color=BACKGROUND_COLOR, border_width=BORDER_WIDTH,
                                 border_color=BORDER_COLOR, corner_radius=0)
@@ -1285,8 +1136,7 @@ def setup_main_ui():
             lbl = ctk.CTkLabel(room, text=initial_name, fg_color="transparent",
                             font=(custom_font_family, 10), wraplength=GRID_SIZE-5, text_color="white")
             lbl.pack(fill="both", expand=True)
-            grid_state[grid_y][grid_x] = {'frame': room, 'label': lbl, 'name': initial_name}
-            # clicking a room should show its details in the right-hand panel
+            grid_state[grid_y][grid_x] = {'frame': room, 'label': lbl, 'name': initial_name, 'loaded': loaded}
             try:
                 lbl.bind("<Button-1>", lambda e, x=grid_x, y=grid_y: display_room_details_main(x, y))
             except Exception:
@@ -1302,7 +1152,6 @@ def setup_main_ui():
             floor = floors[current_floor[0]]
             grid_state = floor["grid_state"]
             plus_buttons = floor["plus_buttons"]
-            # clear old
             for b in list(plus_buttons.values()):
                 try:
                     b.destroy()
@@ -1310,25 +1159,21 @@ def setup_main_ui():
                     pass
             plus_buttons.clear()
             
-            # First, add plus buttons based on rooms in the floor below
             floor_below_idx = current_floor[0] - 1
             if floor_below_idx in floors:
                 floor_below = floors[floor_below_idx]["grid_state"]
                 for y in range(len(floor_below)):
                     for x in range(len(floor_below[y])):
                         if floor_below[y][x] is not None:
-                            # Add plus button above this room if there's no room there already
                             if grid_state[y][x] is None:
-                                # MODIFIED: Apply standard border to small plus button
                                 btn = ctk.CTkButton(grid_container, text="+", width=20, height=20,
                                                     corner_radius=0, fg_color=BACKGROUND_COLOR, hover_color="#666666",
-                                                    border_width=BORDER_WIDTH, border_color=BORDER_COLOR, # Added border
+                                                    border_width=BORDER_WIDTH, border_color=BORDER_COLOR,
                                                     command=lambda gx=x, gy=y: place_room_on_floor(gx, gy))
                                 btn.place(x=x * GRID_SIZE + grid_canvas.winfo_x() + GRID_SIZE//2 - 10,
-                                    y=y * GRID_SIZE + grid_canvas.winfo_y() + GRID_SIZE//2 - 10)
+                                        y=y * GRID_SIZE + grid_canvas.winfo_y() + GRID_SIZE//2 - 10)
                                 plus_buttons[f"{x},{y}"] = btn
             
-            # Then add plus buttons around existing rooms on current floor
             directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
             for y in range(GRID_DIM_Y):
                 for x in range(GRID_DIM_X):
@@ -1339,17 +1184,15 @@ def setup_main_ui():
                                 if grid_state[ny][nx] is None:
                                     key = (nx, ny)
                                     if key not in plus_buttons:
-                                        # MODIFIED: Apply standard border to large plus button
                                         btn = ctk.CTkButton(grid_container, text="+", width=GRID_SIZE, height=GRID_SIZE,
                                                             corner_radius=0, fg_color=BACKGROUND_COLOR, hover_color="#555555",
-                                                            border_width=BORDER_WIDTH, border_color=BORDER_COLOR, # Added border
+                                                            border_width=BORDER_WIDTH, border_color=BORDER_COLOR,
                                                             command=lambda gx=nx, gy=ny: place_room_on_floor(gx, gy))
                                         btn.place(x=nx * GRID_SIZE + grid_canvas.winfo_x(),
                                                 y=ny * GRID_SIZE + grid_canvas.winfo_y())
                                         plus_buttons[key] = btn
 
         def redraw_floor():
-            # clear existing widgets except canvas
             for w in grid_container.winfo_children():
                 if w != grid_canvas:
                     try:
@@ -1364,80 +1207,113 @@ def setup_main_ui():
                 for x in range(GRID_DIM_X):
                     cell = grid_state[y][x]
                     if cell is not None:
-                        # re-create visual room
-                        add_room_to_floor(x, y, is_immovable=True, initial_name=cell.get('name', 'Room'))
+                        add_room_to_floor(x, y, is_immovable=True, initial_name=cell.get('name', 'Room'), loaded=cell.get('loaded', False))
             show_adjacent_placeholders()
 
+        def load_main_level_data():
+            nonlocal floors
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            main_dir = os.path.join(script_dir, "../Working_game/Text/Room_descriptions/Main")
+            
+            floors.clear()
+            if os.path.exists(main_dir):
+                floor_dirs = sorted([d for d in os.listdir(main_dir) if d.startswith('Floor_')])
+                for floor_idx, floor_dir in enumerate(floor_dirs):
+                    try:
+                        floor_num = int(floor_dir.split('_')[1])
+                        grid_state = [[None for _ in range(GRID_DIM_X)] for _ in range(GRID_DIM_Y)]
+                        floor_path = os.path.join(main_dir, floor_dir)
+                        
+                        for folder in os.listdir(floor_path):
+                            if folder.startswith('y') and '_x' in folder:
+                                try:
+                                    y_str, x_str = folder.split('_')
+                                    y = int(y_str[1:]) - 1
+                                    x = int(x_str[1:]) - 1
+                                    if 0 <= x < GRID_DIM_X and 0 <= y < GRID_DIM_Y:
+                                        room_dir = os.path.join(floor_path, folder)
+                                        cell = {'loaded': True}
+                                        
+                                        # Description.txt
+                                        desc_path = os.path.join(room_dir, "Description.txt")
+                                        if os.path.exists(desc_path) and os.path.getsize(desc_path) > 0:
+                                            with open(desc_path, 'r', encoding='utf-8') as f:
+                                                lines = f.read().splitlines()
+                                                if lines:
+                                                    cell['name'] = lines[0]
+                                                    if len(lines) > 2 and lines[1] == '-----':
+                                                        cell['desc'] = '\n'.join(lines[2:])
+                                                    else:
+                                                        cell['desc'] = ''
+                                        
+                                        # Items.txt
+                                        items_path = os.path.join(room_dir, "Items.txt")
+                                        if os.path.exists(items_path) and os.path.getsize(items_path) > 0:
+                                            with open(items_path, 'r', encoding='utf-8') as f:
+                                                items = f.read().splitlines()
+                                                cell['findable_items'] = ','.join([i for i in items if i.strip()])
+                                        
+                                        # Strange_occerance.txt
+                                        damage_path = os.path.join(room_dir, "Strange_occerance.txt")
+                                        if os.path.exists(damage_path) and os.path.getsize(damage_path) > 0:
+                                            with open(damage_path, 'r', encoding='utf-8') as f:
+                                                cell['damage_text'] = f.read().strip()
+                                        
+                                        # Usable_Items.txt
+                                        usable_path = os.path.join(room_dir, "Usable_Items.txt")
+                                        if os.path.exists(usable_path) and os.path.getsize(usable_path) > 0:
+                                            with open(usable_path, 'r', encoding='utf-8') as f:
+                                                lines = f.read().splitlines()
+                                                if len(lines) >= 3:
+                                                    cell['usable_item'] = lines[0].strip()
+                                                    cell['item_used_text'] = lines[1].strip()
+                                                    cell['item_found'] = lines[2].strip()
+                                        
+                                        grid_state[y][x] = cell
+                                except (ValueError, IndexError):
+                                    continue
+                        
+                        floors[floor_idx] = {"grid_state": grid_state, "plus_buttons": {}}
+                    except (ValueError, IndexError):
+                        continue
+            
+            if not floors:
+                floors[0] = {"grid_state": [[None for _ in range(GRID_DIM_X)] for _ in range(GRID_DIM_Y)], "plus_buttons": {}}
+            
+            if floors[0]["grid_state"][0][0] is None:
+                floors[0]["grid_state"][0][0] = {'name': 'Start Room', 'desc': '', 'findable_items': '', 'usable_item': '', 'item_used_text': '', 'item_found': '', 'damage_text': '', 'loaded': False}
+            
+            redraw_floor()
+
         def setup_grid_main(event=None):
-            nonlocal GRID_DIM_X, GRID_DIM_Y
+            nonlocal floors
             grid_canvas.delete("all")
-            # Set constant grid dimensions
-            GRID_DIM_X = 33  # Fixed width of 33 cells
-            GRID_DIM_Y = 20  # Fixed height of 20 cells
             grid_width = GRID_DIM_X * GRID_SIZE
             grid_height = GRID_DIM_Y * GRID_SIZE
             grid_canvas.place(x=0, y=0, width=grid_width, height=grid_height)
             
-            # --- REMOVED GRID DRAWING LOGIC ---
-            # for x in range(0, grid_width, GRID_SIZE):
-            #     grid_canvas.create_line(x, 0, x, grid_height, fill="#555555")
-            # for y in range(0, grid_height, GRID_SIZE):
-            #     grid_canvas.create_line(0, y, grid_width, y, fill="#555555")
-            
-            # ensure at least one floor exists
             if not floors:
-                floors[0] = {"grid_state": [[None for _ in range(GRID_DIM_X)] for _ in range(GRID_DIM_Y)],
-                            "plus_buttons": {}}
-            
-            # Ensure start room exists on floor 0
-            if 0 in floors:
-                # Temporarily switch to floor 0 to add the room correctly
-                original_floor = current_floor[0]
-                current_floor[0] = 0
-                if floors[0]["grid_state"][0][0] is None:
-                    add_room_to_floor(0, 0, is_immovable=True, initial_name="Start Room")
-                current_floor[0] = original_floor # Restore original floor
-            
-            # Resize other floors' grid_state if needed
-            for idx in list(floors.keys()):
-                # Only check if resize is necessary
-                if len(floors[idx]["grid_state"]) != GRID_DIM_Y or len(floors[idx]["grid_state"][0]) != GRID_DIM_X:
-                    # Rebuild grid state to match new dimensions (preserving data is complex, 
-                    # but based on original code this simple reset is likely intended if dimensions change)
-                    floors[idx]["grid_state"] = [[None for _ in range(GRID_DIM_X)] for _ in range(GRID_DIM_Y)]
-                    floors[idx]["plus_buttons"] = {}
-                    # For floor 0, re-add the start room if it was wiped by the reset
-                    if idx == 0 and floors[0]["grid_state"][0][0] is None:
-                        add_room_to_floor(0, 0, is_immovable=True, initial_name="Start Room")
-
-            # Now redraw the currently selected floor
-            redraw_floor()
+                load_main_level_data()
+            else:
+                redraw_floor()
             refresh_floor_list()
 
-
-        # UI layout
         main_frame = ctk.CTkFrame(parent_tab, fg_color="#2b2b2b")
         main_frame.pack(fill="both", expand=True, padx=20, pady=(20, 60))
-        # Left: floors list
         floor_list_frame = ctk.CTkFrame(main_frame, fg_color="#1e1e1e", width=120)
         floor_list_frame.pack(side="left", fill="y", padx=(0, 10), pady=10)
-        # Right: info panel for room details
         info_display_frame = ctk.CTkFrame(main_frame, fg_color="transparent", width=300)
         info_display_frame.pack(side="right", fill="y", padx=(10, 0), pady=10)
-        # Center: grid container
         grid_container = ctk.CTkFrame(main_frame, fg_color="transparent")
         grid_container.pack(side="left", fill="both", expand=True, padx=10, pady=10)
-        # MODIFIED: Use the BACKGROUND_COLOR constant for consistency
         grid_canvas = ctk.CTkCanvas(grid_container, bg=BACKGROUND_COLOR, highlightthickness=0)
         grid_canvas.pack(fill="both", expand=True)
         grid_container.bind("<Configure>", setup_grid_main)
 
-        # initialize
-        setup_grid_main()
+        load_main_level_data()
 
         def save_main_level():
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            # Root folder for saving (comment: this is the root folder)
             root_folder = os.path.join(script_dir, "../Working_game")
             main_dir = os.path.join(root_folder, "Text/Room_descriptions/Main")
             if os.path.exists(main_dir):
@@ -1457,26 +1333,22 @@ def setup_main_ui():
                             room_dir = os.path.join(floor_dir, f"y{y+1}_x{x+1}")
                             os.makedirs(room_dir)
 
-                            # Description.txt
                             name = cell.get('name', '')
                             desc = cell.get('desc', '')
                             with open(os.path.join(room_dir, "Description.txt"), "w", encoding="utf-8") as f:
                                 f.write(f"{name}\n-----\n{desc}")
 
-                            # Items.txt (findable items, one per line)
                             items_str = cell.get('findable_items', '')
                             if items_str:
                                 items = [i.strip() for i in items_str.split(',') if i.strip()]
                                 with open(os.path.join(room_dir, "Items.txt"), "w", encoding="utf-8") as f:
                                     f.write("\n".join(items))
 
-                            # Strange_occerance.txt
                             damage_text = cell.get('damage_text', '')
                             if damage_text:
                                 with open(os.path.join(room_dir, "Strange_occerance.txt"), "w", encoding="utf-8") as f:
                                     f.write(damage_text)
 
-                            # Usable_Items.txt (item_used\ntext_when_used\nitem_found)
                             usable_item = cell.get('usable_item', '')
                             item_used_text = cell.get('item_used_text', '')
                             item_found = cell.get('item_found', '')
@@ -1485,7 +1357,6 @@ def setup_main_ui():
                                 with open(os.path.join(room_dir, "Usable_Items.txt"), "w", encoding="utf-8") as f:
                                     f.write(content)
 
-                            # Autogenerate Exits.txt
                             exits = []
                             directions = {
                                 "north": (x, y-1, floor_idx),
@@ -1508,16 +1379,12 @@ def setup_main_ui():
 
         return save_main_level
 
-    # Initialize the Tutorial tab (single-layer grid) so it shows content
     save_tutorial = setup_tutorial_tab(tutorial_tab, custom_font_family)
-
-    # Initialize the Main Level tab (multi-floor editor)
     save_main_level = setup_main_level_tab(main_level_tab, custom_font_family)
 
     save_tutorial_button.configure(command=save_tutorial)
     save_main_level_button.configure(command=save_main_level)
 
-    # ========================= Return to Hub & Test App & Export =========================
     return_tab_button = tab_view._segmented_button._buttons_dict["Return to Hub"]
     return_tab_button.configure(fg_color=RETURN_COLOR, hover_color=RETURN_HOVER, text_color="black")
 
@@ -1533,7 +1400,7 @@ def setup_main_ui():
     help_tab_button = tab_view._segmented_button._buttons_dict["Help"]
     help_tab_button.configure(fg_color=ABOUT_COLOR, hover_color=ABOUT_HOVER, text_color="black")
 
-    previous_tab = [tab_view.get()]  # store previous tab in a mutable container
+    previous_tab = [tab_view.get()]
 
     def return_to_hub():
         try:
@@ -1548,7 +1415,6 @@ def setup_main_ui():
     def launch_test_app():
         try:
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            # The test app is inside the Working_game directory now
             exe_path = os.path.join(script_dir,"../Working_game/Echo_runner.exe")
             subprocess.Popen(exe_path)
         except Exception as e:
@@ -1562,7 +1428,6 @@ def setup_main_ui():
             return_to_hub()
         elif current_tab == "Test App":
             launch_test_app()
-            # revert to previous tab
             tab_view.set(previous_tab[0])
             test_tab_button.configure(fg_color=TEST_COLOR, hover_color=TEST_HOVER, text_color="black")
             about_tab_button.configure(fg_color=ABOUT_COLOR, hover_color=ABOUT_HOVER, text_color="black")
@@ -1576,12 +1441,10 @@ def setup_main_ui():
             help_tab_button.configure(fg_color=ABOUT_COLOR, hover_color=ABOUT_HOVER, text_color="black")
             about_tab_button.configure(fg_color=ABOUT_COLOR, hover_color=ABOUT_HOVER, text_color="black")
         else:
-            # store the last active tab (not Test App)
             previous_tab[0] = current_tab
 
     tab_view._command = on_tab_change
 
-    # ========================= About Tab =========================
     about_container = ctk.CTkScrollableFrame(about_tab, fg_color="#222222", corner_radius=10)
     about_container.pack(expand=True, fill="both", padx=20, pady=20)
 
