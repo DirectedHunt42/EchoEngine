@@ -10,7 +10,7 @@ This guide provides a comprehensive walkthrough, including:
 - Troubleshooting common issues.
 - Instructions for reporting bugs.
 
-**Note:** Echo Editor assumes you have an Echo Engine project folder structure set up (e.g., `Working_game/` directory with subfolders like `Text/`, `Fonts/`, `Icons/`, etc.). If you're starting fresh, create these directories manually or run the editor in the correct parent directory.
+**Note:** Echo Editor assumes you have an Echo Engine project folder structure set up (e.g., `Working_game/` directory with subfolders like `Text/`, `Fonts/`, `Icons/`, etc.). If you're starting fresh, create these using the Echo Hub.
 
 ---
 
@@ -136,12 +136,12 @@ A grid-based editor for tutorial levels (single-floor, 40x40 max grid).
   - Clear info via internal functions (e.g., for selected cells).
   - Focus on placing tutorial items from Game Setup.
 
-**Tip:** Grid state is stored in memory. Export to files for persistence.
+**Tip:** Grid state is stored in memory. Save for persistence.
 
 ### Main Level Tab
-Similar to Tutorial but for core levels. Configure multi-floor grids, enemy placements, etc.
+Similar to Tutorial but for core levels. Configure multi-floor grids, damage text, etc.
 - **Save**: Validates and saves level data.
-- **Usage**: Drag/drop or click to build. Link to Win Location from Game Setup.
+- **Usage**: Click to build rooms and layout. Link to Win Location from Game Setup.
 
 ### Export Tab
 - Packages your `Working_game/` into a distributable (e.g., ZIP).
@@ -149,8 +149,8 @@ Similar to Tutorial but for core levels. Configure multi-floor grids, enemy plac
 - **Usage**: Click "Export" after full setup. Handles dependencies like fonts/music.
 
 ### Return to Hub Tab
-- Integrates with Echo Engine's hub system (if applicable).
-- **Usage**: Button to launch hub or reset editor.
+- Integrates with Echo Engine's hub system.
+- **Usage**: Button to launch hub and close the editor.
 
 ### Test App Tab
 - Previews your game with current config.
@@ -177,10 +177,7 @@ Similar to Tutorial but for core levels. Configure multi-floor grids, enemy plac
 - **Tooltips**: Hover for inline help on all labels/fields.
 - **Image Preview**: Scaled display for icons (via internal canvas).
 
-### Customizing Within the App
-- **Themes/Colors**: Fixed dark theme; no in-app toggle.
-- **Paths**: Relative to app location—place executable near `Working_game/`.
-- **Extensions**: Built-in support (.ttf, .png, .mp3, etc.)—no user config.
+
 
 **User Tip:** For large texts, use external .txt files to avoid textbox limits. All saves use UTF-8.
 
