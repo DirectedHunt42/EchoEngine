@@ -703,6 +703,7 @@ def setup_main_ui():
                                     height=100,
                                     font=(custom_font_family, 14),
                                     fg_color="#444444")
+            desc_text.insert("1.0", cell.get('desc', ''))
             desc_text.pack(padx=15, pady=(0, 10))
 
             # Findable Items Section
@@ -715,9 +716,19 @@ def setup_main_ui():
                                     width=250,
                                     font=(custom_font_family, 14),
                                     placeholder_text="Enter items, separated by commas")
+            items_entry.insert(0, cell.get('findable_items', ''))
             items_entry.pack(padx=15, pady=(0, 10))
+
+            def update_desc(event=None):
+                cell['desc'] = desc_text.get("1.0", "end").strip()
+
+            def update_items(event=None):
+                cell['findable_items'] = items_entry.get().strip()
+
             name_entry.bind("<Return>", lambda event: update_room_name_tutorial(name_entry, grid_x, grid_y))
             name_entry.bind("<FocusOut>", lambda event: update_room_name_tutorial(name_entry, grid_x, grid_y))
+            desc_text.bind("<FocusOut>", update_desc)
+            items_entry.bind("<FocusOut>", update_items)
             placeholder_text = ctk.CTkLabel(room_details_content_frame,
                                             text="This is where specific data for this room will go.",
                                             font=(custom_font_family, 14),
@@ -854,6 +865,54 @@ def setup_main_ui():
         # initialize
         setup_grid_tutorial()
 
+        def save_tutorial():
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            # Root folder for saving (comment: this is the root folder)
+            root_folder = os.path.join(script_dir, "../Working_game")
+            tutorial_dir = os.path.join(root_folder, "Text/Room_descriptions/Tutorial")
+            if os.path.exists(tutorial_dir):
+                shutil.rmtree(tutorial_dir)
+            os.makedirs(tutorial_dir)
+
+            for y in range(GRID_DIM_Y):
+                for x in range(GRID_DIM_X):
+                    cell = grid_state[y][x]
+                    if cell is not None:
+                        room_dir = os.path.join(tutorial_dir, f"y{y+1}_x{x+1}")
+                        os.makedirs(room_dir)
+
+                        # Description.txt
+                        name = cell.get('name', '')
+                        desc = cell.get('desc', '')
+                        with open(os.path.join(room_dir, "Description.txt"), "w", encoding="utf-8") as f:
+                            f.write(f"{name}\n-----\n{desc}")
+
+                        # Items.txt (findable items, one per line)
+                        items_str = cell.get('findable_items', '')
+                        if items_str:
+                            items = [i.strip() for i in items_str.split(',') if i.strip()]
+                            with open(os.path.join(room_dir, "Items.txt"), "w", encoding="utf-8") as f:
+                                f.write("\n".join(items))
+
+                        # Autogenerate Exits.txt
+                        exits = []
+                        directions = {
+                            "north": (x, y-1),
+                            "south": (x, y+1),
+                            "east": (x+1, y),
+                            "west": (x-1, y),
+                        }
+                        for dir_name, (nx, ny) in directions.items():
+                            if 0 <= nx < GRID_DIM_X and 0 <= ny < GRID_DIM_Y and grid_state[ny][nx] is not None:
+                                exits.append(dir_name)
+                        if exits:
+                            with open(os.path.join(room_dir, "Exits.txt"), "w", encoding="utf-8") as f:
+                                f.write("\n".join(exits))
+
+            CTkMessagebox(title="Success", message="Tutorial floors saved!", icon="check")
+
+        return save_tutorial
+
     def setup_main_level_tab(parent_tab, custom_font_family="Arial"):
         # Multi-floor grid editor (left: floors, right: grid)
         GRID_SIZE = 40
@@ -943,6 +1002,7 @@ def setup_main_ui():
                                     height=100,
                                     font=(custom_font_family, 14),
                                     fg_color="#444444")
+            desc_text.insert("1.0", cell.get('desc', ''))
             desc_text.pack(padx=15, pady=(0, 10))
 
             # Findable Items Section
@@ -955,30 +1015,47 @@ def setup_main_ui():
                                     width=250,
                                     font=(custom_font_family, 14),
                                     placeholder_text="Enter items, separated by commas")
+            items_entry.insert(0, cell.get('findable_items', ''))
             items_entry.pack(padx=15, pady=(0, 10))
 
             # Usable Items Section
             usable_items_label = ctk.CTkLabel(room_details_content_frame,
-                                            text="Usable Items (comma-separated):",
+                                            text="Usable Items (one per room):",
                                             font=(custom_font_family, 14),
                                             text_color="white")
             usable_items_label.pack(anchor="w", padx=15, pady=(0, 2))
             usable_items_entry = ctk.CTkEntry(room_details_content_frame,
                                             width=250,
                                             font=(custom_font_family, 14),
-                                            placeholder_text="Enter items, separated by commas")
+                                            placeholder_text="Enter item")
+            usable_items_entry.insert(0, cell.get('usable_item', ''))
             usable_items_entry.pack(padx=15, pady=(0, 10))
+
+            #Text when item used
+            item_used_text_label = ctk.CTkLabel(room_details_content_frame,
+                                            text="Text When Item Used:",
+                                            font=(custom_font_family, 14),
+                                            text_color="white")
+            item_used_text_label.pack(anchor="w", padx=15, pady=(0, 2))
+            item_used_text_entry = ctk.CTkTextbox(room_details_content_frame,
+                                            width=250,
+                                            height=100,
+                                            font=(custom_font_family, 14),
+                                            fg_color="#444444")
+            item_used_text_entry.insert("1.0", cell.get('item_used_text', ''))
+            item_used_text_entry.pack(padx=15, pady=(0, 10))
 
             # Items found if item used Section
             items_found_label = ctk.CTkLabel(room_details_content_frame,
-                                            text="Items Found If Used (comma-separated):",
+                                            text="Items Found If Used (one per room):",
                                             font=(custom_font_family, 14),
                                             text_color="white")
             items_found_label.pack(anchor="w", padx=15, pady=(0, 2))
             items_found_entry = ctk.CTkEntry(room_details_content_frame,
                                             width=250,
                                             font=(custom_font_family, 14),
-                                            placeholder_text="Enter items, separated by commas")
+                                            placeholder_text="Enter item")
+            items_found_entry.insert(0, cell.get('item_found', ''))
             items_found_entry.pack(padx=15, pady=(0, 10))
 
             # Damage Text
@@ -987,14 +1064,40 @@ def setup_main_ui():
                                             font=(custom_font_family, 14),
                                             text_color="white")
             damage_text_label.pack(anchor="w", padx=15, pady=(0, 2))
-            damage_text_entry = ctk.CTkEntry(room_details_content_frame,
+            damage_text_entry = ctk.CTkTextbox(room_details_content_frame,
                                             width=250,
+                                            height=100,
                                             font=(custom_font_family, 14),
-                                            placeholder_text="Enter damage text")
+                                            fg_color="#444444")
+            damage_text_entry.insert("1.0", cell.get('damage_text', ''))
             damage_text_entry.pack(padx=15, pady=(0, 10))
+
+            def update_desc(event=None):
+                cell['desc'] = desc_text.get("1.0", "end").strip()
+
+            def update_items(event=None):
+                cell['findable_items'] = items_entry.get().strip()
+
+            def update_usable(event=None):
+                cell['usable_item'] = usable_items_entry.get().strip()
+
+            def update_used_text(event=None):
+                cell['item_used_text'] = item_used_text_entry.get("1.0", "end").strip()
+
+            def update_found(event=None):
+                cell['item_found'] = items_found_entry.get().strip()
+
+            def update_damage(event=None):
+                cell['damage_text'] = damage_text_entry.get("1.0", "end").strip()
 
             name_entry.bind("<Return>", lambda event: update_room_name_main(name_entry, grid_x, grid_y))
             name_entry.bind("<FocusOut>", lambda event: update_room_name_main(name_entry, grid_x, grid_y))
+            desc_text.bind("<FocusOut>", update_desc)
+            items_entry.bind("<FocusOut>", update_items)
+            usable_items_entry.bind("<FocusOut>", update_usable)
+            item_used_text_entry.bind("<FocusOut>", update_used_text)
+            items_found_entry.bind("<FocusOut>", update_found)
+            damage_text_entry.bind("<FocusOut>", update_damage)
             placeholder_text = ctk.CTkLabel(room_details_content_frame,
                                             text="This is where specific data for this room will go.",
                                             font=(custom_font_family, 14),
@@ -1332,11 +1435,87 @@ def setup_main_ui():
         # initialize
         setup_grid_main()
 
+        def save_main_level():
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            # Root folder for saving (comment: this is the root folder)
+            root_folder = os.path.join(script_dir, "../Working_game")
+            main_dir = os.path.join(root_folder, "Text/Room_descriptions/Main")
+            if os.path.exists(main_dir):
+                shutil.rmtree(main_dir)
+            os.makedirs(main_dir)
+
+            for floor_idx in sorted(floors.keys()):
+                floor_num = floor_idx + 1
+                floor_dir = os.path.join(main_dir, f"Floor_{floor_num}")
+                os.makedirs(floor_dir)
+                grid_state = floors[floor_idx]["grid_state"]
+
+                for y in range(GRID_DIM_Y):
+                    for x in range(GRID_DIM_X):
+                        cell = grid_state[y][x]
+                        if cell is not None:
+                            room_dir = os.path.join(floor_dir, f"y{y+1}_x{x+1}")
+                            os.makedirs(room_dir)
+
+                            # Description.txt
+                            name = cell.get('name', '')
+                            desc = cell.get('desc', '')
+                            with open(os.path.join(room_dir, "Description.txt"), "w", encoding="utf-8") as f:
+                                f.write(f"{name}\n-----\n{desc}")
+
+                            # Items.txt (findable items, one per line)
+                            items_str = cell.get('findable_items', '')
+                            if items_str:
+                                items = [i.strip() for i in items_str.split(',') if i.strip()]
+                                with open(os.path.join(room_dir, "Items.txt"), "w", encoding="utf-8") as f:
+                                    f.write("\n".join(items))
+
+                            # Strange_occerance.txt
+                            damage_text = cell.get('damage_text', '')
+                            if damage_text:
+                                with open(os.path.join(room_dir, "Strange_occerance.txt"), "w", encoding="utf-8") as f:
+                                    f.write(damage_text)
+
+                            # Usable_Items.txt (item_used\ntext_when_used\nitem_found)
+                            usable_item = cell.get('usable_item', '')
+                            item_used_text = cell.get('item_used_text', '')
+                            item_found = cell.get('item_found', '')
+                            if usable_item or item_used_text or item_found:
+                                content = f"{usable_item}\n{item_used_text}\n{item_found}"
+                                with open(os.path.join(room_dir, "Usable_Items.txt"), "w", encoding="utf-8") as f:
+                                    f.write(content)
+
+                            # Autogenerate Exits.txt
+                            exits = []
+                            directions = {
+                                "north": (x, y-1, floor_idx),
+                                "south": (x, y+1, floor_idx),
+                                "east": (x+1, y, floor_idx),
+                                "west": (x-1, y, floor_idx),
+                                "up": (x, y, floor_idx + 1),
+                                "down": (x, y, floor_idx - 1),
+                            }
+                            for dir_name, (nx, ny, nf) in directions.items():
+                                if nf in floors:
+                                    gs = floors[nf]["grid_state"]
+                                    if 0 <= nx < GRID_DIM_X and 0 <= ny < GRID_DIM_Y and gs[ny][nx] is not None:
+                                        exits.append(dir_name)
+                            if exits:
+                                with open(os.path.join(room_dir, "Exits.txt"), "w", encoding="utf-8") as f:
+                                    f.write("\n".join(exits))
+
+            CTkMessagebox(title="Success", message="Main levels saved!", icon="check")
+
+        return save_main_level
+
     # Initialize the Tutorial tab (single-layer grid) so it shows content
-    setup_tutorial_tab(tutorial_tab, custom_font_family)
+    save_tutorial = setup_tutorial_tab(tutorial_tab, custom_font_family)
 
     # Initialize the Main Level tab (multi-floor editor)
-    setup_main_level_tab(main_level_tab, custom_font_family)
+    save_main_level = setup_main_level_tab(main_level_tab, custom_font_family)
+
+    save_tutorial_button.configure(command=save_tutorial)
+    save_main_level_button.configure(command=save_main_level)
 
     # ========================= Return to Hub & Test App & Export =========================
     return_tab_button = tab_view._segmented_button._buttons_dict["Return to Hub"]
