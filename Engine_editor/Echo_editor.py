@@ -603,6 +603,14 @@ def setup_main_ui():
                                  fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black",
                                  command=validate_and_save)
     save_button.place(relx=0.5, rely=1.0, anchor="s", y=-10)
+    save_tutorial_button = ctk.CTkButton(tutorial_tab, text="Save", font=(custom_font_family,14),
+                                 fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black",
+                                 )
+    save_tutorial_button.place(relx=0.5, rely=1.0, anchor="s", y=-10)
+    save_main_level_button = ctk.CTkButton(main_level_tab, text="Save", font=(custom_font_family,14),
+                                 fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black",
+                                 )
+    save_main_level_button.place(relx=0.5, rely=1.0, anchor="s", y=-10)
 
    # ========================= Tutorial Tab =========================
     def setup_tutorial_tab(parent_tab, custom_font_family="Arial"):
