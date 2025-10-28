@@ -1875,6 +1875,18 @@ def setup_main_ui():
                                   fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black", command=export_game)
     export_button.pack(pady=(20,10))
 
+    export_instructions = (
+        "To export your game, specify the folder where you want the game to be exported.\n"
+        "Click the '📂' button to browse for a folder.\n"
+        "Then click the 'Export Game' button to start the export process.\n"
+        "Once the game has been exported, you will find it in a folder named 'Echo_Game_Export' inside the selected directory.\n"
+        "To run the game, run the 'Echo_runner.exe' file located in the exported folder.\n"
+        "You can then safely rename the exported folder to your desired game name, as well as create a custom shortcut to the 'Echo_runner.exe' file for easy access."
+    )
+    export_instructions_label = ctk.CTkLabel(export_container, text=export_instructions, font=(custom_font_family, 14),
+                                             justify="left", wraplength=screen_w-100)
+    export_instructions_label.pack(pady=(10,10), padx=10)
+
     # ========================= About Tab =========================
     about_container = ctk.CTkScrollableFrame(about_tab, fg_color="#222222", corner_radius=10)
     about_container.pack(expand=True, fill="both", padx=20, pady=20)
