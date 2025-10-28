@@ -633,6 +633,8 @@ def setup_main_ui():
         # to make the grid lines disappear, relying only on the cell borders.
         BACKGROUND_COLOR = "#333333"
 
+        current_room = [None, None]
+
         def clear_info_display_frame_tutorial():
             nonlocal info_display_frame
             if info_display_frame is None:
@@ -662,10 +664,12 @@ def setup_main_ui():
         def display_room_details_tutorial(grid_x, grid_y):
             nonlocal info_display_frame
             nonlocal grid_state
+            nonlocal current_room
             # ensure the info_display_frame exists
             if info_display_frame is None:
                 return
             clear_info_display_frame_tutorial()
+            current_room[:] = [grid_x, grid_y]
             
             if not grid_state:
                 return
@@ -869,6 +873,25 @@ def setup_main_ui():
         setup_grid_tutorial()
 
         def save_tutorial():
+            nonlocal current_room
+            nonlocal info_display_frame
+            nonlocal grid_state
+            # Update current room if displayed
+            if current_room[0] is not None:
+                x, y = current_room
+                frame = info_display_frame.winfo_children()[0] if info_display_frame.winfo_children() else None
+                if frame:
+                    children = frame.winfo_children()
+                    if len(children) >= 7:
+                        name_entry = children[2]
+                        desc_text = children[4]
+                        items_entry = children[6]
+                        cell = grid_state[y][x]
+                        if cell:
+                            cell['name'] = name_entry.get().strip()
+                            cell['desc'] = desc_text.get("1.0", "end").strip()
+                            cell['findable_items'] = items_entry.get().strip()
+
             script_dir = os.path.dirname(os.path.abspath(__file__))
             # Root folder for saving (comment: this is the root folder)
             root_folder = os.path.join(script_dir, "../Working_game")
@@ -971,6 +994,8 @@ def setup_main_ui():
         # Info display on the right side of the main-level editor
         info_display_frame = None
 
+        current_room = [None, None]
+
         def clear_info_display_frame_main():
             nonlocal info_display_frame
             if info_display_frame is None:
@@ -1004,6 +1029,8 @@ def setup_main_ui():
             if info_display_frame is None:
                 return
             clear_info_display_frame_main()
+            nonlocal current_room
+            current_room[:] = [grid_x, grid_y]
             floor = floors.get(current_floor[0])
             if not floor:
                 return
@@ -1479,6 +1506,34 @@ def setup_main_ui():
         setup_grid_main()
 
         def save_main_level():
+            nonlocal current_room
+            nonlocal info_display_frame
+            # Update current room if displayed
+            if current_room[0] is not None:
+                floor = floors[current_floor[0]]
+                grid_state = floor["grid_state"]
+                x, y = current_room
+                frame = info_display_frame.winfo_children()[0] if info_display_frame.winfo_children() else None
+                if frame:
+                    children = frame.winfo_children()
+                    if len(children) >= 15:
+                        name_entry = children[2]
+                        desc_text = children[4]
+                        items_entry = children[6]
+                        usable_items_entry = children[8]
+                        item_used_text_entry = children[10]
+                        items_found_entry = children[12]
+                        damage_text_entry = children[14]
+                        cell = grid_state[y][x]
+                        if cell:
+                            cell['name'] = name_entry.get().strip()
+                            cell['desc'] = desc_text.get("1.0", "end").strip()
+                            cell['findable_items'] = items_entry.get().strip()
+                            cell['usable_item'] = usable_items_entry.get().strip()
+                            cell['item_used_text'] = item_used_text_entry.get("1.0", "end").strip()
+                            cell['item_found'] = items_found_entry.get().strip()
+                            cell['damage_text'] = damage_text_entry.get("1.0", "end").strip()
+
             script_dir = os.path.dirname(os.path.abspath(__file__))
             # Root folder for saving (comment: this is the root folder)
             root_folder = os.path.join(script_dir, "../Working_game")
