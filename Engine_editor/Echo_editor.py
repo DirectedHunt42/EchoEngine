@@ -1847,12 +1847,34 @@ def setup_main_ui():
             export_path_entry.delete(0, "end")
             export_path_entry.insert(0, selected_dir)
 
-    browse_button = ctk.CTkButton(path_frame, text="Browse", command=browse_export_path, width=100)
+    browse_button = ctk.CTkButton(path_frame, text="📂", width=30, fg_color="#444444", hover_color="#666666", command=browse_export_path)
     browse_button.pack(side="right")
 
     export_button = ctk.CTkButton(export_container, text="Export Game", font=(custom_font_family, 16),
-                                  fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black", width=200)
+                                  fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black", width=200,
+                                  command=export_game)
     export_button.pack(pady=(20,10))
+
+    def export_game():
+        export_path = export_path_entry.get().strip()
+        if not export_path:
+            CTkMessagebox(title="Error", message="Please specify an export path.", icon="cancel")
+            return
+        try:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            working_game_dir = os.path.join(script_dir, "../Working_game")
+            if not os.path.exists(working_game_dir):
+                CTkMessagebox(title="Error", message="Working_game directory not found. Please save your work first.", icon="cancel")
+                return
+            dest_dir = os.path.join(export_path, "Echo_Game_Export")
+            if os.path.exists(dest_dir):
+                progress_bar = ctk.CTkProgressBar(export_container, mode="indeterminate", width=300)
+                progress_bar.pack(pady=(10,10))
+                shutil.rmtree(dest_dir)
+            shutil.copytree(working_game_dir, dest_dir)
+            CTkMessagebox(title="Success", message=f"Game exported successfully to:\n{dest_dir}", icon="check")
+        except Exception as e:
+            CTkMessagebox(title="Error", message=f"Failed to export game:\n{e}", icon="cancel")
 
     # ========================= About Tab =========================
     about_container = ctk.CTkScrollableFrame(about_tab, fg_color="#222222", corner_radius=10)
