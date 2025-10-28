@@ -1850,11 +1850,6 @@ def setup_main_ui():
     browse_button = ctk.CTkButton(path_frame, text="📂", width=30, fg_color="#444444", hover_color="#666666", command=browse_export_path)
     browse_button.pack(side="right")
 
-    export_button = ctk.CTkButton(export_container, text="Export Game", font=(custom_font_family, 16),
-                                  fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black", width=200,
-                                  command=export_game)
-    export_button.pack(pady=(20,10))
-
     def export_game():
         export_path = export_path_entry.get().strip()
         if not export_path:
@@ -1875,6 +1870,10 @@ def setup_main_ui():
             CTkMessagebox(title="Success", message=f"Game exported successfully to:\n{dest_dir}", icon="check")
         except Exception as e:
             CTkMessagebox(title="Error", message=f"Failed to export game:\n{e}", icon="cancel")
+
+    export_button = ctk.CTkButton(export_container, text="Export Game", font=(custom_font_family, 16),
+                                  fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black", command=export_game)
+    export_button.pack(pady=(20,10))
 
     # ========================= About Tab =========================
     about_container = ctk.CTkScrollableFrame(about_tab, fg_color="#222222", corner_radius=10)
