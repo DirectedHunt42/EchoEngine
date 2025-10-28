@@ -1817,7 +1817,9 @@ def setup_main_ui():
             export_tab_button.configure(fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black")
             about_tab_button.configure(fg_color=ABOUT_COLOR, hover_color=ABOUT_HOVER, text_color="black")
         elif current_tab == "Help":
-            os.startfile("Engine_editor\Docs\Help\Help.pdf")
+            base_path = os.path.dirname(__file__)
+            help_path = os.path.join(base_path, "Docs", "Help", "Help.pdf")
+            os.startfile(help_path)
             tab_view.set(previous_tab[0])
             help_tab_button.configure(fg_color=ABOUT_COLOR, hover_color=ABOUT_HOVER, text_color="black")
             about_tab_button.configure(fg_color=ABOUT_COLOR, hover_color=ABOUT_HOVER, text_color="black")
@@ -1891,10 +1893,12 @@ def setup_main_ui():
     about_container = ctk.CTkScrollableFrame(about_tab, fg_color="#222222", corner_radius=10)
     about_container.pack(expand=True, fill="both", padx=20, pady=20)
 
-    about_image_path1 = r"Engine_editor\Icons\Nova_foundry\Nova_foundry_wide_transparent.png"
-    about_image_path2 = r"Engine_editor\Icons\Echo_engine\Echo_engine_transparent.png"
-    display_image_scaled(about_image_path1, about_container, scale=0.2)
-    display_image_scaled(about_image_path2, about_container, scale=0.2)
+    base_path = os.path.dirname(__file__)  # directory of current script
+    nova_path = os.path.join(base_path, "Icons", "Nova_foundry", "Nova_foundry_wide_transparent.png")
+    echo_path = os.path.join(base_path, "Icons", "Echo_engine", "Echo_engine_transparent.png")
+
+    display_image_scaled(nova_path, about_container, scale=0.2)
+    display_image_scaled(echo_path, about_container, scale=0.2)
 
     version_label = ctk.CTkLabel(about_container,text="Echo Editor v1.0.6",font=(custom_font_family,16))
     version_label.pack(pady=(10,20))
