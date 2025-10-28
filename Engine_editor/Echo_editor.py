@@ -12,6 +12,13 @@ import webbrowser
 import tkinter as tk
 from tkinter import font as tkFont, filedialog, Toplevel, Label
 from collections import deque
+import sys
+
+# Base path for static resources (bundled in _MEIPASS for EXE, script dir otherwise)
+resource_base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
+
+# Base path for saving/loading dynamic files (EXE dir for bundled, script dir otherwise)
+save_base_path = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(os.path.abspath(__file__))
 
 # ========================= Tooltip Helper =========================
 class ToolTip:
@@ -59,7 +66,7 @@ app = ctk.CTk()
 app.title("Echo Editor")
 
 # ---------- Custom App Icon ----------
-icon_path = r"Engine_editor\Icons\App_icon\Echo_editor.ico"
+icon_path = os.path.join(resource_base_path, "Engine_editor", "Icons", "App_icon", "Echo_editor.ico")
 if os.path.exists(icon_path):
     try:
         app.iconbitmap(icon_path)
@@ -330,7 +337,7 @@ def setup_main_ui():
         LOADED_COLOR = "#006400" # A dark green color
 
         for key, rel_path in save_paths.items():
-            full_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), rel_path)
+            full_path = os.path.join(save_base_path, rel_path)
             widget = inputs[key]
 
             # Check if file exists
@@ -1817,8 +1824,7 @@ def setup_main_ui():
             export_tab_button.configure(fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black")
             about_tab_button.configure(fg_color=ABOUT_COLOR, hover_color=ABOUT_HOVER, text_color="black")
         elif current_tab == "Help":
-            base_path = os.path.dirname(__file__)
-            help_path = os.path.join(base_path, "Docs", "Help", "Help.pdf")
+            help_path = os.path.join(resource_base_path, "Docs", "Help", "Help.pdf")
             os.startfile(help_path)
             tab_view.set(previous_tab[0])
             help_tab_button.configure(fg_color=ABOUT_COLOR, hover_color=ABOUT_HOVER, text_color="black")
@@ -1893,9 +1899,8 @@ def setup_main_ui():
     about_container = ctk.CTkScrollableFrame(about_tab, fg_color="#222222", corner_radius=10)
     about_container.pack(expand=True, fill="both", padx=20, pady=20)
 
-    base_path = os.path.dirname(__file__)  # directory of current script
-    nova_path = os.path.join(base_path, "Icons", "Nova_foundry", "Nova_foundry_wide_transparent.png")
-    echo_path = os.path.join(base_path, "Icons", "Echo_engine", "Echo_engine_transparent.png")
+    nova_path = os.path.join(resource_base_path, "Icons", "Nova_foundry", "Nova_foundry_wide_transparent.png")
+    echo_path = os.path.join(resource_base_path, "Icons", "Echo_engine", "Echo_engine_transparent.png")
 
     display_image_scaled(nova_path, about_container, scale=0.2)
     display_image_scaled(echo_path, about_container, scale=0.2)
