@@ -1804,6 +1804,7 @@ def setup_main_ui():
         current_tab = tab_view.get()
         about_tab_button.configure(fg_color=ABOUT_COLOR, hover_color=ABOUT_HOVER, text_color="black")
         help_tab_button.configure(fg_color=ABOUT_COLOR, hover_color=ABOUT_HOVER, text_color="black")
+        export_tab_button.configure(fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black")
         if current_tab == "Return to Hub":
             return_to_hub()
         elif current_tab == "Test App":
@@ -1813,7 +1814,6 @@ def setup_main_ui():
             test_tab_button.configure(fg_color=TEST_COLOR, hover_color=TEST_HOVER, text_color="black")
             about_tab_button.configure(fg_color=ABOUT_COLOR, hover_color=ABOUT_HOVER, text_color="black")
         elif current_tab == "Export":
-            tab_view.set(previous_tab[0])
             export_tab_button.configure(fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black")
             about_tab_button.configure(fg_color=ABOUT_COLOR, hover_color=ABOUT_HOVER, text_color="black")
         elif current_tab == "Help":
@@ -1826,6 +1826,15 @@ def setup_main_ui():
             previous_tab[0] = current_tab
 
     tab_view._command = on_tab_change
+
+    # ========================= Export Tab =========================
+    export_container = ctk.CTkScrollableFrame(export_tab, fg_color="#222222", corner_radius=10)
+    export_container.pack(expand=True, fill="both", padx=20, pady=20)
+
+    export_path_label = ctk.CTkLabel(export_container, text="Export Path:", font=(custom_font_family, 16))
+    export_path_label.pack(pady=(10,5))
+    export_path_entry = ctk.CTkEntry(export_container, width=screen_w-100, font=(custom_font_family, 14))
+    export_path_entry.pack(pady=(0,10))
 
     # ========================= About Tab =========================
     about_container = ctk.CTkScrollableFrame(about_tab, fg_color="#222222", corner_radius=10)
