@@ -635,6 +635,8 @@ def setup_main_ui():
 
         current_room = [None, None]
 
+        FILLED_COLOR = "green"
+
         def clear_info_display_frame_tutorial():
             nonlocal info_display_frame
             if info_display_frame is None:
@@ -658,6 +660,8 @@ def setup_main_ui():
             if 'label' in cell and cell['label']:
                 try:
                     cell['label'].configure(text=new_name)
+                    all_filled = all(cell.get(k, '').strip() for k in ['name', 'desc', 'findable_items'])
+                    cell['label'].configure(text_color=FILLED_COLOR if all_filled else "white")
                 except Exception:
                     pass
 
@@ -698,6 +702,10 @@ def setup_main_ui():
             # Room Name (pack first so other sections are visible and layout is stable)
             name_entry.insert(0, current_name)
             name_entry.pack(padx=15, pady=(0, 10))
+            if current_name:
+                name_entry.configure(fg_color=LOADED_COLOR)
+            else:
+                name_entry.configure(fg_color="#444444")
 
             # Room Description Section
             desc_label = ctk.CTkLabel(room_details_content_frame,
@@ -710,8 +718,13 @@ def setup_main_ui():
                                     height=100,
                                     font=(custom_font_family, 14),
                                     fg_color="#444444")
-            desc_text.insert("1.0", cell.get('desc', ''))
+            desc = cell.get('desc', '')
+            desc_text.insert("1.0", desc)
             desc_text.pack(padx=15, pady=(0, 10))
+            if desc:
+                desc_text.configure(fg_color=LOADED_COLOR)
+            else:
+                desc_text.configure(fg_color="#444444")
 
             # Findable Items Section
             items_label = ctk.CTkLabel(room_details_content_frame,
@@ -723,16 +736,25 @@ def setup_main_ui():
                                     width=250,
                                     font=(custom_font_family, 14),
                                     placeholder_text="Enter items, separated by commas")
-            items_entry.insert(0, cell.get('findable_items', ''))
+            items = cell.get('findable_items', '')
+            items_entry.insert(0, items)
             items_entry.pack(padx=15, pady=(0, 10))
+            if items:
+                items_entry.configure(fg_color=LOADED_COLOR)
+            else:
+                items_entry.configure(fg_color="#444444")
             name_entry.bind("<Return>", lambda event: update_room_name_tutorial(name_entry, grid_x, grid_y))
             name_entry.bind("<FocusOut>", lambda event: update_room_name_tutorial(name_entry, grid_x, grid_y))
 
             def update_desc(event=None):
                 cell['desc'] = desc_text.get("1.0", "end").strip()
+                all_filled = all(cell.get(k, '').strip() for k in ['name', 'desc', 'findable_items'])
+                cell['label'].configure(text_color=FILLED_COLOR if all_filled else "white")
 
             def update_items(event=None):
                 cell['findable_items'] = items_entry.get().strip()
+                all_filled = all(cell.get(k, '').strip() for k in ['name', 'desc', 'findable_items'])
+                cell['label'].configure(text_color=FILLED_COLOR if all_filled else "white")
 
             desc_text.bind("<FocusOut>", update_desc)
             items_entry.bind("<FocusOut>", update_items)
@@ -753,10 +775,15 @@ def setup_main_ui():
                                 border_color="white", corner_radius=0)      # Keep white border
             room.place(x=grid_x * GRID_SIZE + grid_canvas.winfo_x(),
                     y=grid_y * GRID_SIZE + grid_canvas.winfo_y())
-            lbl = ctk.CTkLabel(room, text=initial_name, fg_color="transparent",
-                            font=(custom_font_family, 10), wraplength=GRID_SIZE-5, text_color="white")
+            cell = grid_state[grid_y][grid_x] or {'name': initial_name}
+            all_filled = all(cell.get(k, '').strip() for k in ['name', 'desc', 'findable_items'])
+            text_color = FILLED_COLOR if all_filled else "white"
+            lbl = ctk.CTkLabel(room, text=cell.get('name', initial_name), fg_color="transparent",
+                            font=(custom_font_family, 10), wraplength=GRID_SIZE-5, text_color=text_color)
             lbl.pack(fill="both", expand=True)
-            grid_state[grid_y][grid_x] = {'frame': room, 'label': lbl, 'name': initial_name}
+            grid_state[grid_y][grid_x] = cell
+            cell['frame'] = room
+            cell['label'] = lbl
             # clicking a room should show its details in the right-hand panel
             try:
                 lbl.bind("<Button-1>", lambda e, x=grid_x, y=grid_y: display_room_details_tutorial(x, y))
@@ -937,6 +964,8 @@ def setup_main_ui():
 
             # Recheck for filled sections by reloading
             load_tutorial_data()
+            if current_room[0] is not None:
+                display_room_details_tutorial(current_room[0], current_room[1])
             CTkMessagebox(title="Success", message="Tutorial floors saved!", icon="check")
 
         def load_tutorial_data():
@@ -996,6 +1025,8 @@ def setup_main_ui():
 
         current_room = [None, None]
 
+        FILLED_COLOR = "green"
+
         def clear_info_display_frame_main():
             nonlocal info_display_frame
             if info_display_frame is None:
@@ -1020,6 +1051,8 @@ def setup_main_ui():
             if 'label' in cell and cell['label']:
                 try:
                     cell['label'].configure(text=new_name)
+                    all_filled = all(cell.get(k, '').strip() for k in ['name', 'desc', 'findable_items', 'usable_item', 'item_used_text', 'item_found', 'damage_text'])
+                    cell['label'].configure(text_color=FILLED_COLOR if all_filled else "white")
                 except Exception:
                     pass
 
@@ -1059,6 +1092,10 @@ def setup_main_ui():
             # Room Name (pack first so other sections are visible and layout is stable)
             name_entry.insert(0, current_name)
             name_entry.pack(padx=15, pady=(0, 10))
+            if current_name:
+                name_entry.configure(fg_color=LOADED_COLOR)
+            else:
+                name_entry.configure(fg_color="#444444")
 
             # Room Description Section
             desc_label = ctk.CTkLabel(room_details_content_frame,
@@ -1071,8 +1108,13 @@ def setup_main_ui():
                                     height=100,
                                     font=(custom_font_family, 14),
                                     fg_color="#444444")
-            desc_text.insert("1.0", cell.get('desc', ''))
+            desc = cell.get('desc', '')
+            desc_text.insert("1.0", desc)
             desc_text.pack(padx=15, pady=(0, 10))
+            if desc:
+                desc_text.configure(fg_color=LOADED_COLOR)
+            else:
+                desc_text.configure(fg_color="#444444")
 
             # Findable Items Section
             items_label = ctk.CTkLabel(room_details_content_frame,
@@ -1084,8 +1126,13 @@ def setup_main_ui():
                                     width=250,
                                     font=(custom_font_family, 14),
                                     placeholder_text="Enter items, separated by commas")
-            items_entry.insert(0, cell.get('findable_items', ''))
+            findable_items = cell.get('findable_items', '')
+            items_entry.insert(0, findable_items)
             items_entry.pack(padx=15, pady=(0, 10))
+            if findable_items:
+                items_entry.configure(fg_color=LOADED_COLOR)
+            else:
+                items_entry.configure(fg_color="#444444")
 
             # Usable Items Section
             usable_items_label = ctk.CTkLabel(room_details_content_frame,
@@ -1097,8 +1144,13 @@ def setup_main_ui():
                                             width=250,
                                             font=(custom_font_family, 14),
                                             placeholder_text="Enter item")
-            usable_items_entry.insert(0, cell.get('usable_item', ''))
+            usable_item = cell.get('usable_item', '')
+            usable_items_entry.insert(0, usable_item)
             usable_items_entry.pack(padx=15, pady=(0, 10))
+            if usable_item:
+                usable_items_entry.configure(fg_color=LOADED_COLOR)
+            else:
+                usable_items_entry.configure(fg_color="#444444")
 
             #Text when item used
             item_used_text_label = ctk.CTkLabel(room_details_content_frame,
@@ -1111,8 +1163,13 @@ def setup_main_ui():
                                             height=100,
                                             font=(custom_font_family, 14),
                                             fg_color="#444444")
-            item_used_text_entry.insert("1.0", cell.get('item_used_text', ''))
+            item_used_text = cell.get('item_used_text', '')
+            item_used_text_entry.insert("1.0", item_used_text)
             item_used_text_entry.pack(padx=15, pady=(0, 10))
+            if item_used_text:
+                item_used_text_entry.configure(fg_color=LOADED_COLOR)
+            else:
+                item_used_text_entry.configure(fg_color="#444444")
 
             # Items found if item used Section
             items_found_label = ctk.CTkLabel(room_details_content_frame,
@@ -1124,8 +1181,13 @@ def setup_main_ui():
                                             width=250,
                                             font=(custom_font_family, 14),
                                             placeholder_text="Enter item")
-            items_found_entry.insert(0, cell.get('item_found', ''))
+            item_found = cell.get('item_found', '')
+            items_found_entry.insert(0, item_found)
             items_found_entry.pack(padx=15, pady=(0, 10))
+            if item_found:
+                items_found_entry.configure(fg_color=LOADED_COLOR)
+            else:
+                items_found_entry.configure(fg_color="#444444")
 
             # Damage Text
             damage_text_label = ctk.CTkLabel(room_details_content_frame,
@@ -1138,29 +1200,46 @@ def setup_main_ui():
                                             height=100,
                                             font=(custom_font_family, 14),
                                             fg_color="#444444")
-            damage_text_entry.insert("1.0", cell.get('damage_text', ''))
+            damage_text = cell.get('damage_text', '')
+            damage_text_entry.insert("1.0", damage_text)
             damage_text_entry.pack(padx=15, pady=(0, 10))
+            if damage_text:
+                damage_text_entry.configure(fg_color=LOADED_COLOR)
+            else:
+                damage_text_entry.configure(fg_color="#444444")
 
             name_entry.bind("<Return>", lambda event: update_room_name_main(name_entry, grid_x, grid_y))
             name_entry.bind("<FocusOut>", lambda event: update_room_name_main(name_entry, grid_x, grid_y))
 
             def update_desc(event=None):
                 cell['desc'] = desc_text.get("1.0", "end").strip()
+                all_filled = all(cell.get(k, '').strip() for k in ['name', 'desc', 'findable_items', 'usable_item', 'item_used_text', 'item_found', 'damage_text'])
+                cell['label'].configure(text_color=FILLED_COLOR if all_filled else "white")
 
             def update_items(event=None):
                 cell['findable_items'] = items_entry.get().strip()
+                all_filled = all(cell.get(k, '').strip() for k in ['name', 'desc', 'findable_items', 'usable_item', 'item_used_text', 'item_found', 'damage_text'])
+                cell['label'].configure(text_color=FILLED_COLOR if all_filled else "white")
 
             def update_usable(event=None):
                 cell['usable_item'] = usable_items_entry.get().strip()
+                all_filled = all(cell.get(k, '').strip() for k in ['name', 'desc', 'findable_items', 'usable_item', 'item_used_text', 'item_found', 'damage_text'])
+                cell['label'].configure(text_color=FILLED_COLOR if all_filled else "white")
 
             def update_used_text(event=None):
                 cell['item_used_text'] = item_used_text_entry.get("1.0", "end").strip()
+                all_filled = all(cell.get(k, '').strip() for k in ['name', 'desc', 'findable_items', 'usable_item', 'item_used_text', 'item_found', 'damage_text'])
+                cell['label'].configure(text_color=FILLED_COLOR if all_filled else "white")
 
             def update_found(event=None):
                 cell['item_found'] = items_found_entry.get().strip()
+                all_filled = all(cell.get(k, '').strip() for k in ['name', 'desc', 'findable_items', 'usable_item', 'item_used_text', 'item_found', 'damage_text'])
+                cell['label'].configure(text_color=FILLED_COLOR if all_filled else "white")
 
             def update_damage(event=None):
                 cell['damage_text'] = damage_text_entry.get("1.0", "end").strip()
+                all_filled = all(cell.get(k, '').strip() for k in ['name', 'desc', 'findable_items', 'usable_item', 'item_used_text', 'item_found', 'damage_text'])
+                cell['label'].configure(text_color=FILLED_COLOR if all_filled else "white")
 
             desc_text.bind("<FocusOut>", update_desc)
             items_entry.bind("<FocusOut>", update_items)
@@ -1352,10 +1431,15 @@ def setup_main_ui():
                                 border_color=BORDER_COLOR, corner_radius=0)
             room.place(x=grid_x * GRID_SIZE + grid_canvas.winfo_x(),
                     y=grid_y * GRID_SIZE + grid_canvas.winfo_y())
-            lbl = ctk.CTkLabel(room, text=initial_name, fg_color="transparent",
-                            font=(custom_font_family, 10), wraplength=GRID_SIZE-5, text_color="white")
+            cell = grid_state[grid_y][grid_x] or {'name': initial_name}
+            all_filled = all(cell.get(k, '').strip() for k in ['name', 'desc', 'findable_items', 'usable_item', 'item_used_text', 'item_found', 'damage_text'])
+            text_color = FILLED_COLOR if all_filled else "white"
+            lbl = ctk.CTkLabel(room, text=cell.get('name', initial_name), fg_color="transparent",
+                            font=(custom_font_family, 10), wraplength=GRID_SIZE-5, text_color=text_color)
             lbl.pack(fill="both", expand=True)
-            grid_state[grid_y][grid_x] = {'frame': room, 'label': lbl, 'name': initial_name}
+            grid_state[grid_y][grid_x] = cell
+            cell['frame'] = room
+            cell['label'] = lbl
             # clicking a room should show its details in the right-hand panel
             try:
                 lbl.bind("<Button-1>", lambda e, x=grid_x, y=grid_y: display_room_details_main(x, y))
@@ -1603,6 +1687,8 @@ def setup_main_ui():
 
             # Recheck for filled sections by reloading
             load_main_level_data()
+            if current_room[0] is not None:
+                display_room_details_main(current_room[0], current_room[1])
             CTkMessagebox(title="Success", message="Main levels saved!", icon="check")
 
         def load_main_level_data():
