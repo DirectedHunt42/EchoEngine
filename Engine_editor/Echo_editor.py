@@ -1833,8 +1833,26 @@ def setup_main_ui():
 
     export_path_label = ctk.CTkLabel(export_container, text="Export Path:", font=(custom_font_family, 16))
     export_path_label.pack(pady=(10,5))
-    export_path_entry = ctk.CTkEntry(export_container, width=screen_w-100, font=(custom_font_family, 14))
-    export_path_entry.pack(pady=(0,10))
+
+    # Frame to hold entry + button side by side
+    path_frame = ctk.CTkFrame(export_container, fg_color="transparent")
+    path_frame.pack(fill="x", pady=(0,10))
+
+    export_path_entry = ctk.CTkEntry(path_frame, width=screen_w-200, font=(custom_font_family, 14))
+    export_path_entry.pack(side="left", fill="x", expand=True, padx=(0,10))
+
+    def browse_export_path():
+        selected_dir = filedialog.askdirectory(title="Select Export Folder")
+        if selected_dir:
+            export_path_entry.delete(0, "end")
+            export_path_entry.insert(0, selected_dir)
+
+    browse_button = ctk.CTkButton(path_frame, text="Browse", command=browse_export_path, width=100)
+    browse_button.pack(side="right")
+
+    export_button = ctk.CTkButton(export_container, text="Export Game", font=(custom_font_family, 16),
+                                  fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black", width=200)
+    export_button.pack(pady=(20,10))
 
     # ========================= About Tab =========================
     about_container = ctk.CTkScrollableFrame(about_tab, fg_color="#222222", corner_radius=10)
