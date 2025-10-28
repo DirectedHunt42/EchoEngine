@@ -630,15 +630,14 @@ def setup_main_ui():
         info_display_frame = None
         
         # --- CONSTANT FOR BACKGROUND/ROOM COLOR ---
-        # Use the same color for the canvas background and the room fill 
-        # to make the grid lines disappear, relying only on the cell borders.
         BACKGROUND_COLOR = "#333333"
 
         current_room = [None, None]
-
         FILLED_COLOR = "green"
-
         directions_2d = [(0,1),(0,-1),(1,0),(-1,0)]
+
+        # NEW: Track the current mode (True for Add Mode, False for Remove Mode)
+        is_add_mode = [True]
 
         def can_remove_tutorial(rx, ry):
             if rx == 0 and ry == 0:
@@ -688,7 +687,6 @@ def setup_main_ui():
             if cell is None:
                 return
             cell['name'] = new_name
-            # update label if it exists
             if 'label' in cell and cell['label']:
                 try:
                     cell['label'].configure(text=new_name)
@@ -701,7 +699,6 @@ def setup_main_ui():
             nonlocal info_display_frame
             nonlocal grid_state
             nonlocal current_room
-            # ensure the info_display_frame exists
             if info_display_frame is None:
                 return
             clear_info_display_frame_tutorial()
@@ -709,7 +706,7 @@ def setup_main_ui():
             
             if not grid_state:
                 return
-                
+                    
             cell = grid_state[grid_y][grid_x]
             if cell is None:
                 return
@@ -726,20 +723,16 @@ def setup_main_ui():
                                     font=(custom_font_family, 14),
                                     text_color="white")
             name_label.pack(anchor="w", padx=15, pady=(0, 2))
-            # Room Name Section
             name_entry = ctk.CTkEntry(room_details_content_frame,
                                     width=250,
                                     font=(custom_font_family, 14),
                                     placeholder_text="Enter room name")
-            # Room Name (pack first so other sections are visible and layout is stable)
             name_entry.insert(0, current_name)
             name_entry.pack(padx=15, pady=(0, 10))
             if current_name:
                 name_entry.configure(fg_color=LOADED_COLOR)
             else:
                 name_entry.configure(fg_color="#444444")
-
-            # Room Description Section
             desc_label = ctk.CTkLabel(room_details_content_frame,
                                     text="Room Description:",
                                     font=(custom_font_family, 14),
@@ -757,8 +750,6 @@ def setup_main_ui():
                 desc_text.configure(fg_color=LOADED_COLOR)
             else:
                 desc_text.configure(fg_color="#444444")
-
-            # Findable Items Section
             items_label = ctk.CTkLabel(room_details_content_frame,
                                     text="Findable Items (comma-separated):",
                                     font=(custom_font_family, 14),
@@ -797,14 +788,11 @@ def setup_main_ui():
                                             wraplength=info_display_frame.winfo_width() - 30)
             placeholder_text.pack(pady=(5, 10), padx=10)
 
-        # All floor management functions (refresh_floor_list, switch_floor, drag/drop, remove_floor, add_new_floor) are removed.
-
         def add_room_tutorial(grid_x, grid_y, is_immovable=False, initial_name="Room"):
             nonlocal grid_state
-            # create visual room
             room = ctk.CTkFrame(grid_container, width=GRID_SIZE, height=GRID_SIZE,
-                                fg_color=BACKGROUND_COLOR, border_width=2, # Use BACKGROUND_COLOR for fg_color
-                                border_color="white", corner_radius=0)      # Keep white border
+                                fg_color=BACKGROUND_COLOR, border_width=2,
+                                border_color="white", corner_radius=0)
             room.place(x=grid_x * GRID_SIZE + grid_canvas.winfo_x(),
                     y=grid_y * GRID_SIZE + grid_canvas.winfo_y())
             cell = grid_state[grid_y][grid_x] or {'name': initial_name}
@@ -816,15 +804,11 @@ def setup_main_ui():
             grid_state[grid_y][grid_x] = cell
             cell['frame'] = room
             cell['label'] = lbl
-            # clicking a room should show its details in the right-hand panel
             try:
                 lbl.bind("<Button-1>", lambda e, x=grid_x, y=grid_y: display_room_details_tutorial(x, y))
             except Exception:
                 pass
-            if can_remove_tutorial(grid_x, grid_y):
-                remove_btn = ctk.CTkButton(room, text="-", width=20, height=20, fg_color="#661111", hover_color="#881111",
-                                           command=lambda gx=grid_x, gy=grid_y: remove_room_tutorial(gx, gy))
-                remove_btn.place(relx=1.0, rely=0.0, anchor="ne")
+            # MODIFIED: No remove button on the room itself; handled by Remove Mode
             if not is_immovable:
                 room.bind("<Enter>", lambda e: show_adjacent_placeholders_tutorial())
 
@@ -835,7 +819,7 @@ def setup_main_ui():
         def show_adjacent_placeholders_tutorial():
             nonlocal grid_state
             nonlocal plus_buttons
-            # clear old
+            # Clear old buttons
             for b in list(plus_buttons.values()):
                 try:
                     b.destroy()
@@ -843,23 +827,36 @@ def setup_main_ui():
                     pass
             plus_buttons.clear()
             
-            # Logic for checking floor below is removed.
-
-            # Add plus buttons around existing rooms on current floor
+            # MODIFIED: Check mode and show appropriate buttons
             directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
             for y in range(GRID_DIM_Y):
                 for x in range(GRID_DIM_X):
                     if grid_state[y][x] is not None:
-                        for dx, dy in directions:
-                            nx, ny = x + dx, y + dy
-                            if 0 <= nx < GRID_DIM_X and 0 <= ny < GRID_DIM_Y:
-                                if grid_state[ny][nx] is None:
+                        if not is_add_mode[0]:  # Remove Mode
+                            # Show red "−" buttons on removable exterior rooms
+                            if can_remove_tutorial(x, y):
+                                for dx, dy in directions:
+                                    nx, ny = x + dx, y + dy
+                                    if 0 <= nx < GRID_DIM_X and 0 <= ny < GRID_DIM_Y and grid_state[ny][nx] is None:
+                                        key = (nx, ny)
+                                        if key not in plus_buttons:
+                                            btn = ctk.CTkButton(grid_container, text="−", width=GRID_SIZE, height=GRID_SIZE,
+                                                                corner_radius=0, fg_color="#661111", hover_color="#881111",
+                                                                border_width=2, border_color="white",
+                                                                command=lambda gx=x, gy=y: remove_room_tutorial(gx, gy))
+                                            btn.place(x=nx * GRID_SIZE + grid_canvas.winfo_x(),
+                                                    y=ny * GRID_SIZE + grid_canvas.winfo_y())
+                                            plus_buttons[key] = btn
+                        else:  # Add Mode
+                            # Show green "+" buttons around existing rooms
+                            for dx, dy in directions:
+                                nx, ny = x + dx, y + dy
+                                if 0 <= nx < GRID_DIM_X and 0 <= ny < GRID_DIM_Y and grid_state[ny][nx] is None:
                                     key = (nx, ny)
                                     if key not in plus_buttons:
-                                        # Change plus button border_width and border_color to match rooms
                                         btn = ctk.CTkButton(grid_container, text="+", width=GRID_SIZE, height=GRID_SIZE,
                                                             corner_radius=0, fg_color=BACKGROUND_COLOR, hover_color="#555555",
-                                                            border_width=2, border_color="white", 
+                                                            border_width=2, border_color="white",
                                                             command=lambda gx=nx, gy=ny: place_room_tutorial(gx, gy))
                                         btn.place(x=nx * GRID_SIZE + grid_canvas.winfo_x(),
                                                 y=ny * GRID_SIZE + grid_canvas.winfo_y())
@@ -867,22 +864,18 @@ def setup_main_ui():
 
         def redraw_grid_tutorial():
             nonlocal grid_state
-            # clear existing widgets except canvas
             for w in grid_container.winfo_children():
                 if w != grid_canvas:
                     try:
                         w.destroy()
                     except Exception:
                         pass
-            
             if not grid_state:
                 return
-
             for y in range(GRID_DIM_Y):
                 for x in range(GRID_DIM_X):
                     cell = grid_state[y][x]
                     if cell is not None:
-                        # re-create visual room
                         add_room_tutorial(x, y, is_immovable=True, initial_name=cell.get('name', 'Room'))
             show_adjacent_placeholders_tutorial()
 
@@ -892,33 +885,43 @@ def setup_main_ui():
             grid_width = GRID_DIM_X * GRID_SIZE
             grid_height = GRID_DIM_Y * GRID_SIZE
             grid_canvas.place(x=0, y=0, width=grid_width, height=grid_height)
-            
+            show_adjacent_placeholders_tutorial()
+
+        # NEW: Toggle button for Add/Remove Mode
+        def toggle_mode_tutorial():
+            is_add_mode[0] = not is_add_mode[0]
+            toggle_button.configure(text="Remove Mode" if is_add_mode[0] else "Add Mode",
+                                fg_color="#444444" if is_add_mode[0] else "#661111",
+                                hover_color="#666666" if is_add_mode[0] else "#881111")
             show_adjacent_placeholders_tutorial()
 
         # UI layout
         main_frame = ctk.CTkFrame(parent_tab, fg_color="#2b2b2b")
         main_frame.pack(fill="both", expand=True, padx=20, pady=(20, 60))
         
-        # Right: info panel for room details
+        # NEW: Add toggle button above grid
+        toggle_button = ctk.CTkButton(main_frame, text="Remove Mode", font=(custom_font_family, 14),
+                                    fg_color="#444444", hover_color="#666666",
+                                    command=toggle_mode_tutorial)
+        toggle_button.pack(anchor="ne", padx=10, pady=(0, 5))
+        
         info_display_frame = ctk.CTkFrame(main_frame, fg_color="transparent", width=300)
         info_display_frame.pack(side="right", fill="y", padx=(10, 0), pady=10)
         
-        # Center: grid container (now takes up the left and center space)
         grid_container = ctk.CTkFrame(main_frame, fg_color="transparent")
         grid_container.pack(side="left", fill="both", expand=True, padx=(0, 10), pady=10)
         
-        grid_canvas = ctk.CTkCanvas(grid_container, bg=BACKGROUND_COLOR, highlightthickness=0) # Use the same color
+        grid_canvas = ctk.CTkCanvas(grid_container, bg=BACKGROUND_COLOR, highlightthickness=0)
         grid_canvas.pack(fill="both", expand=True)
         grid_container.bind("<Configure>", setup_grid_tutorial)
 
-        # initialize
+        # Initialize
         setup_grid_tutorial()
 
         def save_tutorial():
             nonlocal current_room
             nonlocal info_display_frame
             nonlocal grid_state
-            # Update current room if displayed
             if current_room[0] is not None:
                 x, y = current_room
                 frame = info_display_frame.winfo_children()[0] if info_display_frame.winfo_children() else None
@@ -935,7 +938,6 @@ def setup_main_ui():
                             cell['findable_items'] = items_entry.get().strip()
 
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            # Root folder for saving (comment: this is the root folder)
             root_folder = os.path.join(script_dir, "../Working_game")
             tutorial_dir = os.path.join(root_folder, "Text/Room_descriptions/Tutorial")
             if os.path.exists(tutorial_dir):
@@ -948,21 +950,15 @@ def setup_main_ui():
                     if cell is not None:
                         room_dir = os.path.join(tutorial_dir, f"y{y+1}_x{x+1}")
                         os.makedirs(room_dir)
-
-                        # description.txt
                         name = cell.get('name', '')
                         desc = cell.get('desc', '')
                         with open(os.path.join(room_dir, "Description.txt"), "w", encoding="utf-8") as f:
                             f.write(f"{name}\n-----\n{desc}")
-
-                        # items.txt (findable items, one per line)
                         items_str = cell.get('findable_items', '')
                         if items_str:
                             items = [item.strip() for item in items_str.split(',')]
                             with open(os.path.join(room_dir, "Items.txt"), "w", encoding="utf-8") as f:
                                 f.write("\n".join(items))
-
-                        # Autogenerate exits.txt
                         exits = []
                         directions = {
                             "north": (x, y-1),
@@ -977,7 +973,6 @@ def setup_main_ui():
                             with open(os.path.join(room_dir, "Exits.txt"), "w", encoding="utf-8") as f:
                                 f.write("\n".join(exits))
 
-            # Recheck for filled sections by reloading
             load_tutorial_data()
             if current_room[0] is not None:
                 display_room_details_tutorial(current_room[0], current_room[1])
@@ -1019,30 +1014,24 @@ def setup_main_ui():
             redraw_grid_tutorial()
 
         load_tutorial_data()
-
         return save_tutorial, load_tutorial_data
 
     def setup_main_level_tab(parent_tab, custom_font_family="Arial"):
-        # Multi-floor grid editor (left: floors, right: grid)
         GRID_SIZE = 40
         GRID_DIM_X, GRID_DIM_Y = 33, 20
-        
-        # --- CONSTANTS FOR BACKGROUND/ROOM COLOR ---
         BACKGROUND_COLOR = "#333333"
         BORDER_WIDTH = 2
         BORDER_COLOR = "white"
 
-        floors = {} # floor_index -> {"grid_state": [[None]], "plus_buttons": {}}
+        floors = {}
         current_floor = [0]
-
-        # Info display on the right side of the main-level editor
         info_display_frame = None
-
         current_room = [None, None]
-
         FILLED_COLOR = "green"
+        directions_3d = [(0,0,1),(0,0,-1),(0,1,0),(0,-1,0),(1,0,0),(-1,0,0)]
 
-        directions_3d = [(0,0,1),(0,0,-1),(0,1,0),(0,-1,0),(1,0,0),(-1,0,0)]  # df, dy, dx
+        # NEW: Track the current mode (True for Add Mode, False for Remove Mode)
+        is_add_mode = [True]
 
         def can_remove_main(rfloor, rx, ry):
             if rfloor == 0 and rx == 0 and ry == 0:
@@ -1053,7 +1042,7 @@ def setup_main_ui():
             temp = floors[rfloor]["grid_state"][ry][rx]
             floors[rfloor]["grid_state"][ry][rx] = None
             visited = set()
-            q = deque([(0,0,0)])  # f, y, x
+            q = deque([(0,0,0)])
             visited.add((0,0,0))
             while q:
                 f, y, x = q.popleft()
@@ -1094,7 +1083,6 @@ def setup_main_ui():
             if cell is None:
                 return
             cell['name'] = new_name
-            # update label if it exists
             if 'label' in cell and cell['label']:
                 try:
                     cell['label'].configure(text=new_name)
@@ -1105,7 +1093,6 @@ def setup_main_ui():
 
         def display_room_details_main(grid_x, grid_y):
             nonlocal info_display_frame
-            # ensure the info_display_frame exists
             if info_display_frame is None:
                 return
             clear_info_display_frame_main()
@@ -1131,20 +1118,16 @@ def setup_main_ui():
                                     font=(custom_font_family, 14),
                                     text_color="white")
             name_label.pack(anchor="w", padx=15, pady=(0, 2))
-            # Room Name Section
             name_entry = ctk.CTkEntry(room_details_content_frame,
                                     width=250,
                                     font=(custom_font_family, 14),
                                     placeholder_text="Enter room name")
-            # Room Name (pack first so other sections are visible and layout is stable)
             name_entry.insert(0, current_name)
             name_entry.pack(padx=15, pady=(0, 10))
             if current_name:
                 name_entry.configure(fg_color=LOADED_COLOR)
             else:
                 name_entry.configure(fg_color="#444444")
-
-            # Room Description Section
             desc_label = ctk.CTkLabel(room_details_content_frame,
                                     text="Room Description:",
                                     font=(custom_font_family, 14),
@@ -1162,8 +1145,6 @@ def setup_main_ui():
                 desc_text.configure(fg_color=LOADED_COLOR)
             else:
                 desc_text.configure(fg_color="#444444")
-
-            # Findable Items Section
             items_label = ctk.CTkLabel(room_details_content_frame,
                                     text="Findable Items (comma-separated):",
                                     font=(custom_font_family, 14),
@@ -1180,8 +1161,6 @@ def setup_main_ui():
                 items_entry.configure(fg_color=LOADED_COLOR)
             else:
                 items_entry.configure(fg_color="#444444")
-
-            # Usable Items Section
             usable_items_label = ctk.CTkLabel(room_details_content_frame,
                                             text="Usable Items (one per room):",
                                             font=(custom_font_family, 14),
@@ -1198,8 +1177,6 @@ def setup_main_ui():
                 usable_items_entry.configure(fg_color=LOADED_COLOR)
             else:
                 usable_items_entry.configure(fg_color="#444444")
-
-            #Text when item used
             item_used_text_label = ctk.CTkLabel(room_details_content_frame,
                                             text="Text When Item Used:",
                                             font=(custom_font_family, 14),
@@ -1217,8 +1194,6 @@ def setup_main_ui():
                 item_used_text_entry.configure(fg_color=LOADED_COLOR)
             else:
                 item_used_text_entry.configure(fg_color="#444444")
-
-            # Items found if item used Section
             items_found_label = ctk.CTkLabel(room_details_content_frame,
                                             text="Items Found If Used (one per room):",
                                             font=(custom_font_family, 14),
@@ -1235,8 +1210,6 @@ def setup_main_ui():
                 items_found_entry.configure(fg_color=LOADED_COLOR)
             else:
                 items_found_entry.configure(fg_color="#444444")
-
-            # Damage Text
             damage_text_label = ctk.CTkLabel(room_details_content_frame,
                                             text="Damage Text:",
                                             font=(custom_font_family, 14),
@@ -1254,7 +1227,6 @@ def setup_main_ui():
                 damage_text_entry.configure(fg_color=LOADED_COLOR)
             else:
                 damage_text_entry.configure(fg_color="#444444")
-
             name_entry.bind("<Return>", lambda event: update_room_name_main(name_entry, grid_x, grid_y))
             name_entry.bind("<FocusOut>", lambda event: update_room_name_main(name_entry, grid_x, grid_y))
 
@@ -1302,20 +1274,13 @@ def setup_main_ui():
             placeholder_text.pack(pady=(5, 10), padx=10)
 
         def refresh_floor_list():
-            # Clear existing buttons
             for widget in floor_list_frame.winfo_children():
                 widget.destroy()
-
-            # Title
             header = ctk.CTkLabel(floor_list_frame, text="Floors", font=(custom_font_family,16,"bold"))
             header.pack(pady=(10,5))
-
-            # Add floor list entries
             for i in range(len(floors)):
                 floor_frame = ctk.CTkFrame(floor_list_frame, fg_color="transparent")
                 floor_frame.pack(fill="x", pady=2, padx=5)
-                
-                # Floor label that can be clicked to switch floors
                 floor_btn = ctk.CTkButton(floor_frame, 
                                         text=f"Floor {i}",
                                         command=lambda idx=i: switch_floor(idx),
@@ -1323,13 +1288,8 @@ def setup_main_ui():
                                         hover_color="#321FDD" if i == current_floor[0] else "#444444",
                                         text_color="white")
                 floor_btn.pack(side="left", expand=True, fill="x", padx=(5,5))
-
-                # Remove button if there's more than one floor
                 if len(floors) > 1:
-                    # Add warning tooltip if removing this floor would affect higher floors
                     tooltip_text = "Warning: Removing this floor will also remove all floors above it!" if i < len(floors) - 1 else None
-                    
-                    # NOTE: ToolTip is not defined in the provided code, so assuming it's an external utility
                     try:
                         remove_btn = ctk.CTkButton(floor_frame,
                                                 text="×",
@@ -1338,10 +1298,8 @@ def setup_main_ui():
                                                 fg_color="#661111",
                                                 hover_color="#881111")
                         remove_btn.pack(side="right", padx=5)
-                        
                         if tooltip_text:
-                            # Assuming ToolTip exists, otherwise this will error
-                            ToolTip(remove_btn, tooltip_text) 
+                            ToolTip(remove_btn, tooltip_text)
                     except NameError:
                         remove_btn = ctk.CTkButton(floor_frame,
                                                 text="×",
@@ -1350,8 +1308,6 @@ def setup_main_ui():
                                                 fg_color="#661111",
                                                 hover_color="#881111")
                         remove_btn.pack(side="right", padx=5)
-                
-            # Add Floor button at the bottom
             add_btn = ctk.CTkButton(floor_list_frame, text="+ Add Floor", command=add_new_floor,
                                     fg_color="#444444", hover_color="#666666")
             add_btn.pack(pady=10)
@@ -1363,11 +1319,9 @@ def setup_main_ui():
                     "grid_state": [[None for _ in range(GRID_DIM_X)] for _ in range(GRID_DIM_Y)],
                     "plus_buttons": {},
                 }
-            # Update floor button colors when switching floors
             refresh_floor_list()
             redraw_floor()
 
-        # Variables for drag and drop
         drag_data = {"start_y": 0, "source_idx": None}
 
         def start_drag(event, floor_idx):
@@ -1377,22 +1331,18 @@ def setup_main_ui():
         def handle_drag(event, floor_idx):
             if drag_data["source_idx"] is None:
                 return
-                
-            # Calculate the target position based on mouse position
-            for widget in floor_list_frame.winfo_children()[:-1]:  # Exclude add button
+            for widget in floor_list_frame.winfo_children()[:-1]:
                 if isinstance(widget, ctk.CTkFrame):
                     widget_y = widget.winfo_rooty()
                     widget_height = widget.winfo_height()
                     if widget_y <= event.y_root <= widget_y + widget_height:
-                        # Find the index of the frame containing the floor button
                         try:
-                            target_idx = floor_list_frame.winfo_children().index(widget) - 1 # -1 because of the "Floors" title label
+                            target_idx = floor_list_frame.winfo_children().index(widget) - 1
                         except ValueError:
-                            continue # Should not happen
-                            
+                            continue
                         if target_idx != drag_data["source_idx"] and target_idx >= 0:
                             reorder_floors(drag_data["source_idx"], target_idx)
-                            drag_data["source_idx"] = target_idx # Update source index after reorder
+                            drag_data["source_idx"] = target_idx
                             break
 
         def end_drag(event, floor_idx):
@@ -1401,18 +1351,12 @@ def setup_main_ui():
         def reorder_floors(old_idx, new_idx):
             if old_idx == new_idx:
                 return
-
-            # Update the floors dictionary
             floors_list = [(i, data) for i, data in sorted(floors.items())]
             floor_to_move = floors_list.pop(old_idx)
             floors_list.insert(new_idx, floor_to_move)
-            
-            # Rebuild floors dictionary with new order
             floors.clear()
             for new_idx_key, (_, data) in enumerate(floors_list):
                 floors[new_idx_key] = data
-
-            # Update current floor index if needed
             if current_floor[0] == old_idx:
                 current_floor[0] = new_idx
             elif old_idx < new_idx:
@@ -1421,34 +1365,24 @@ def setup_main_ui():
             else:
                 if current_floor[0] >= new_idx and current_floor[0] < old_idx:
                     current_floor[0] += 1
-
             refresh_floor_list()
 
         def remove_floor(floor_idx):
             if len(floors) <= 1:
-                return  # Don't remove the last floor
-
-            # Remove the target floor and all floors above it
-            # The original code's remove_floor logic needs to be respected (remove target and all above)
+                return
             floors_to_keep = {}
             for idx, data in sorted(floors.items()):
                 if idx < floor_idx:
                     floors_to_keep[idx] = data
-
             floors.clear()
             floors.update(floors_to_keep)
-            
-            # Re-index the remaining floors
             new_floors = {}
             for new_idx, (_, data) in enumerate(sorted(floors.items())):
                 new_floors[new_idx] = data
             floors.clear()
             floors.update(new_floors)
-            
-            # Update current floor if needed
             if current_floor[0] >= floor_idx:
                 current_floor[0] = max(0, len(floors) - 1)
-                
             refresh_floor_list()
             redraw_floor()
 
@@ -1461,18 +1395,9 @@ def setup_main_ui():
             refresh_floor_list()
             switch_floor(new_index)
 
-        # NOTE: The provided code contains two copies of reorder_floors and remove_floor.
-        # I have kept the first version of reorder_floors and the second (more complex)
-        # version of remove_floor which handles the "remove floor and all above" logic.
-        # The drag/drop logic (start_drag, handle_drag, end_drag) is currently not
-        # fully wired to the buttons in refresh_floor_list, but I'll leave the functions
-        # as they were in the original source, focusing only on the visual changes.
-
-
         def add_room_to_floor(grid_x, grid_y, is_immovable=False, initial_name="Room"):
             floor = floors[current_floor[0]]
             grid_state = floor["grid_state"]
-            # create visual room
             room = ctk.CTkFrame(grid_container, width=GRID_SIZE, height=GRID_SIZE,
                                 fg_color=BACKGROUND_COLOR, border_width=BORDER_WIDTH,
                                 border_color=BORDER_COLOR, corner_radius=0)
@@ -1487,15 +1412,11 @@ def setup_main_ui():
             grid_state[grid_y][grid_x] = cell
             cell['frame'] = room
             cell['label'] = lbl
-            # clicking a room should show its details in the right-hand panel
             try:
                 lbl.bind("<Button-1>", lambda e, x=grid_x, y=grid_y: display_room_details_main(x, y))
             except Exception:
                 pass
-            if can_remove_main(current_floor[0], grid_x, grid_y):
-                remove_btn = ctk.CTkButton(room, text="-", width=20, height=20, fg_color="#661111", hover_color="#881111",
-                                           command=lambda gx=grid_x, gy=grid_y: remove_room_main(gx, gy))
-                remove_btn.place(relx=1.0, rely=0.0, anchor="ne")
+            # MODIFIED: No remove button on the room itself; handled by Remove Mode
             if not is_immovable:
                 room.bind("<Enter>", lambda e: show_adjacent_placeholders())
 
@@ -1507,7 +1428,6 @@ def setup_main_ui():
             floor = floors[current_floor[0]]
             grid_state = floor["grid_state"]
             plus_buttons = floor["plus_buttons"]
-            # clear old
             for b in list(plus_buttons.values()):
                 try:
                     b.destroy()
@@ -1515,47 +1435,46 @@ def setup_main_ui():
                     pass
             plus_buttons.clear()
             
-            # Add based on floor below
-            floor_below_idx = current_floor[0] - 1
-            if floor_below_idx in floors:
-                floor_below = floors[floor_below_idx]["grid_state"]
+            # MODIFIED: Check mode and show appropriate buttons
+            if is_add_mode[0]:  # Add Mode
+                # Add based on floor below
+                floor_below_idx = current_floor[0] - 1
+                if floor_below_idx in floors:
+                    floor_below = floors[floor_below_idx]["grid_state"]
+                    for y in range(GRID_DIM_Y):
+                        for x in range(GRID_DIM_X):
+                            if floor_below[y][x] is not None:
+                                if grid_state[y][x] is None:
+                                    btn = ctk.CTkButton(grid_container, text="+", width=20, height=20,
+                                                        corner_radius=0, fg_color=BACKGROUND_COLOR, hover_color="#666666",
+                                                        border_width=BORDER_WIDTH, border_color=BORDER_COLOR,
+                                                        command=lambda gx=x, gy=y: place_room_on_floor(gx, gy))
+                                    btn.place(x=x * GRID_SIZE + grid_canvas.winfo_x() + GRID_SIZE//2 - 10,
+                                            y=y * GRID_SIZE + grid_canvas.winfo_y() + GRID_SIZE//2 - 10)
+                                    plus_buttons[f"below_{x}_{y}"] = btn
+                # Add based on floor above
+                floor_above_idx = current_floor[0] + 1
+                if floor_above_idx in floors:
+                    floor_above = floors[floor_above_idx]["grid_state"]
+                    for y in range(GRID_DIM_Y):
+                        for x in range(GRID_DIM_X):
+                            if floor_above[y][x] is not None:
+                                if grid_state[y][x] is None:
+                                    btn = ctk.CTkButton(grid_container, text="+", width=20, height=20,
+                                                        corner_radius=0, fg_color=BACKGROUND_COLOR, hover_color="#666666",
+                                                        border_width=BORDER_WIDTH, border_color=BORDER_COLOR,
+                                                        command=lambda gx=x, gy=y: place_room_on_floor(gx, gy))
+                                    btn.place(x=x * GRID_SIZE + grid_canvas.winfo_x() + GRID_SIZE//2 - 10,
+                                            y=y * GRID_SIZE + grid_canvas.winfo_y() + GRID_SIZE//2 - 10)
+                                    plus_buttons[f"above_{x}_{y}"] = btn
+                # Add plus buttons around existing rooms on current floor
+                directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
                 for y in range(GRID_DIM_Y):
                     for x in range(GRID_DIM_X):
-                        if floor_below[y][x] is not None:
-                            if grid_state[y][x] is None:
-                                btn = ctk.CTkButton(grid_container, text="+", width=20, height=20,
-                                                    corner_radius=0, fg_color=BACKGROUND_COLOR, hover_color="#666666",
-                                                    border_width=BORDER_WIDTH, border_color=BORDER_COLOR,
-                                                    command=lambda gx=x, gy=y: place_room_on_floor(gx, gy))
-                                btn.place(x=x * GRID_SIZE + grid_canvas.winfo_x() + GRID_SIZE//2 - 10,
-                                          y=y * GRID_SIZE + grid_canvas.winfo_y() + GRID_SIZE//2 - 10)
-                                plus_buttons[f"below_{x}_{y}"] = btn
-            
-            # Add based on floor above
-            floor_above_idx = current_floor[0] + 1
-            if floor_above_idx in floors:
-                floor_above = floors[floor_above_idx]["grid_state"]
-                for y in range(GRID_DIM_Y):
-                    for x in range(GRID_DIM_X):
-                        if floor_above[y][x] is not None:
-                            if grid_state[y][x] is None:
-                                btn = ctk.CTkButton(grid_container, text="+", width=20, height=20,
-                                                    corner_radius=0, fg_color=BACKGROUND_COLOR, hover_color="#666666",
-                                                    border_width=BORDER_WIDTH, border_color=BORDER_COLOR,
-                                                    command=lambda gx=x, gy=y: place_room_on_floor(gx, gy))
-                                btn.place(x=x * GRID_SIZE + grid_canvas.winfo_x() + GRID_SIZE//2 - 10,
-                                          y=y * GRID_SIZE + grid_canvas.winfo_y() + GRID_SIZE//2 - 10)
-                                plus_buttons[f"above_{x}_{y}"] = btn
-
-            # Then add plus buttons around existing rooms on current floor
-            directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
-            for y in range(GRID_DIM_Y):
-                for x in range(GRID_DIM_X):
-                    if grid_state[y][x] is not None:
-                        for dx, dy in directions:
-                            nx, ny = x + dx, y + dy
-                            if 0 <= nx < GRID_DIM_X and 0 <= ny < GRID_DIM_Y:
-                                if grid_state[ny][nx] is None:
+                        if grid_state[y][x] is not None:
+                            for dx, dy in directions:
+                                nx, ny = x + dx, y + dy
+                                if 0 <= nx < GRID_DIM_X and 0 <= ny < GRID_DIM_Y and grid_state[ny][nx] is None:
                                     key = (nx, ny)
                                     if key not in plus_buttons:
                                         btn = ctk.CTkButton(grid_container, text="+", width=GRID_SIZE, height=GRID_SIZE,
@@ -1563,11 +1482,57 @@ def setup_main_ui():
                                                             border_width=BORDER_WIDTH, border_color=BORDER_COLOR,
                                                             command=lambda gx=nx, gy=ny: place_room_on_floor(gx, gy))
                                         btn.place(x=nx * GRID_SIZE + grid_canvas.winfo_x(),
-                                                  y=ny * GRID_SIZE + grid_canvas.winfo_y())
+                                                y=ny * GRID_SIZE + grid_canvas.winfo_y())
+                                        plus_buttons[key] = btn
+            else:  # Remove Mode
+                # Show red "−" buttons for removable rooms
+                floor_below_idx = current_floor[0] - 1
+                floor_above_idx = current_floor[0] + 1
+                for y in range(GRID_DIM_Y):
+                    for x in range(GRID_DIM_X):
+                        if grid_state[y][x] is not None and can_remove_main(current_floor[0], x, y):
+                            # Horizontal connections
+                            directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+                            for dx, dy in directions:
+                                nx, ny = x + dx, y + dy
+                                if 0 <= nx < GRID_DIM_X and 0 <= ny < GRID_DIM_Y and grid_state[ny][nx] is None:
+                                    key = (nx, ny)
+                                    if key not in plus_buttons:
+                                        btn = ctk.CTkButton(grid_container, text="−", width=GRID_SIZE, height=GRID_SIZE,
+                                                            corner_radius=0, fg_color="#661111", hover_color="#881111",
+                                                            border_width=BORDER_WIDTH, border_color=BORDER_COLOR,
+                                                            command=lambda gx=x, gy=y: remove_room_main(gx, gy))
+                                        btn.place(x=nx * GRID_SIZE + grid_canvas.winfo_x(),
+                                                y=ny * GRID_SIZE + grid_canvas.winfo_y())
+                                        plus_buttons[key] = btn
+                            # Vertical connections (below)
+                            if floor_below_idx in floors:
+                                floor_below = floors[floor_below_idx]["grid_state"]
+                                if floor_below[y][x] is not None and grid_state[y][x] is not None:
+                                    key = f"below_{x}_{y}"
+                                    if key not in plus_buttons:
+                                        btn = ctk.CTkButton(grid_container, text="−", width=20, height=20,
+                                                            corner_radius=0, fg_color="#661111", hover_color="#881111",
+                                                            border_width=BORDER_WIDTH, border_color=BORDER_COLOR,
+                                                            command=lambda gx=x, gy=y: remove_room_main(gx, gy))
+                                        btn.place(x=x * GRID_SIZE + grid_canvas.winfo_x() + GRID_SIZE//2 - 10,
+                                                y=y * GRID_SIZE + grid_canvas.winfo_y() + GRID_SIZE//2 - 10)
+                                        plus_buttons[key] = btn
+                            # Vertical connections (above)
+                            if floor_above_idx in floors:
+                                floor_above = floors[floor_above_idx]["grid_state"]
+                                if floor_above[y][x] is not None and grid_state[y][x] is not None:
+                                    key = f"above_{x}_{y}"
+                                    if key not in plus_buttons:
+                                        btn = ctk.CTkButton(grid_container, text="−", width=20, height=20,
+                                                            corner_radius=0, fg_color="#661111", hover_color="#881111",
+                                                            border_width=BORDER_WIDTH, border_color=BORDER_COLOR,
+                                                            command=lambda gx=x, gy=y: remove_room_main(gx, gy))
+                                        btn.place(x=x * GRID_SIZE + grid_canvas.winfo_x() + GRID_SIZE//2 - 10,
+                                                y=y * GRID_SIZE + grid_canvas.winfo_y() + GRID_SIZE//2 - 10)
                                         plus_buttons[key] = btn
 
         def redraw_floor():
-            # clear existing widgets except canvas
             for w in grid_container.winfo_children():
                 if w != grid_canvas:
                     try:
@@ -1582,7 +1547,6 @@ def setup_main_ui():
                 for x in range(GRID_DIM_X):
                     cell = grid_state[y][x]
                     if cell is not None:
-                        # re-create visual room
                         add_room_to_floor(x, y, is_immovable=True, initial_name=cell.get('name', 'Room'))
             show_adjacent_placeholders()
 
@@ -1591,55 +1555,56 @@ def setup_main_ui():
             grid_width = GRID_DIM_X * GRID_SIZE
             grid_height = GRID_DIM_Y * GRID_SIZE
             grid_canvas.place(x=0, y=0, width=grid_width, height=grid_height)
-            
-            # ensure at least one floor exists
             if not floors:
                 floors[0] = {"grid_state": [[None for _ in range(GRID_DIM_X)] for _ in range(GRID_DIM_Y)],
-                             "plus_buttons": {}}
-            
-            # Ensure start room exists on floor 0
+                            "plus_buttons": {}}
             if 0 in floors:
                 original_floor = current_floor[0]
                 current_floor[0] = 0
                 if floors[0]["grid_state"][0][0] is None:
                     add_room_to_floor(0, 0, is_immovable=True, initial_name="Start Room")
                 current_floor[0] = original_floor
-            
-            # Resize other floors' grid_state if needed
             for idx in list(floors.keys()):
                 if len(floors[idx]["grid_state"]) != GRID_DIM_Y or len(floors[idx]["grid_state"][0]) != GRID_DIM_X:
                     floors[idx]["grid_state"] = [[None for _ in range(GRID_DIM_X)] for _ in range(GRID_DIM_Y)]
                     floors[idx]["plus_buttons"] = {}
                     if idx == 0 and floors[0]["grid_state"][0][0] is None:
                         add_room_to_floor(0, 0, is_immovable=True, initial_name="Start Room")
-
             redraw_floor()
             refresh_floor_list()
+
+        # NEW: Toggle button for Add/Remove Mode
+        def toggle_mode_main():
+            is_add_mode[0] = not is_add_mode[0]
+            toggle_button.configure(text="Remove Mode" if is_add_mode[0] else "Add Mode",
+                                fg_color="#444444" if is_add_mode[0] else "#661111",
+                                hover_color="#666666" if is_add_mode[0] else "#881111")
+            show_adjacent_placeholders()
 
         # UI layout
         main_frame = ctk.CTkFrame(parent_tab, fg_color="#2b2b2b")
         main_frame.pack(fill="both", expand=True, padx=20, pady=(20, 60))
-        # Left: floors list
+        # NEW: Add toggle button above grid
+        toggle_button = ctk.CTkButton(main_frame, text="Remove Mode", font=(custom_font_family, 14),
+                                    fg_color="#444444", hover_color="#666666",
+                                    command=toggle_mode_main)
+        toggle_button.pack(anchor="ne", padx=10, pady=(0, 5))
         floor_list_frame = ctk.CTkFrame(main_frame, fg_color="#1e1e1e", width=120)
         floor_list_frame.pack(side="left", fill="y", padx=(0, 10), pady=10)
-        # Right: info panel for room details
         info_display_frame = ctk.CTkFrame(main_frame, fg_color="transparent", width=300)
         info_display_frame.pack(side="right", fill="y", padx=(10, 0), pady=10)
-        # Center: grid container
         grid_container = ctk.CTkFrame(main_frame, fg_color="transparent")
         grid_container.pack(side="left", fill="both", expand=True, padx=10, pady=10)
-        # MODIFIED: Use the BACKGROUND_COLOR constant for consistency
         grid_canvas = ctk.CTkCanvas(grid_container, bg=BACKGROUND_COLOR, highlightthickness=0)
         grid_canvas.pack(fill="both", expand=True)
         grid_container.bind("<Configure>", setup_grid_main)
 
-        # initialize
+        # Initialize
         setup_grid_main()
 
         def save_main_level():
             nonlocal current_room
             nonlocal info_display_frame
-            # Update current room if displayed
             if current_room[0] is not None:
                 floor = floors[current_floor[0]]
                 grid_state = floor["grid_state"]
@@ -1666,7 +1631,6 @@ def setup_main_ui():
                             cell['damage_text'] = damage_text_entry.get("1.0", "end").strip()
 
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            # Root folder for saving (comment: this is the root folder)
             root_folder = os.path.join(script_dir, "../Working_game")
             main_dir = os.path.join(root_folder, "Text/Room_descriptions/Main")
             if os.path.exists(main_dir):
@@ -1685,35 +1649,25 @@ def setup_main_ui():
                         if cell is not None:
                             room_dir = os.path.join(floor_dir, f"y{y+1}_x{x+1}")
                             os.makedirs(room_dir)
-
-                            # description.txt
                             name = cell.get('name', '')
                             desc = cell.get('desc', '')
                             with open(os.path.join(room_dir, "Description.txt"), "w", encoding="utf-8") as f:
                                 f.write(f"{name}\n-----\n{desc}")
-
-                            # items.txt (findable items, one per line)
                             items_str = cell.get('findable_items', '')
                             if items_str:
                                 items = [item.strip() for item in items_str.split(',')]
                                 with open(os.path.join(room_dir, "Items.txt"), "w", encoding="utf-8") as f:
                                     f.write("\n".join(items))
-
-                            # damage_text.txt
                             damage_text = cell.get('damage_text', '')
                             if damage_text:
                                 with open(os.path.join(room_dir, "Strange_occerance.txt"), "w", encoding="utf-8") as f:
                                     f.write(damage_text)
-
-                            # usable.txt (item_used\ntext_when_used\nitem_found)
                             usable_item = cell.get('usable_item', '')
                             item_used_text = cell.get('item_used_text', '')
                             item_found = cell.get('item_found', '')
                             if usable_item or item_used_text or item_found:
                                 with open(os.path.join(room_dir, "Usable_Items.txt"), "w", encoding="utf-8") as f:
                                     f.write(f"{usable_item}\n{item_used_text}\n{item_found}")
-
-                            # Autogenerate exits.txt
                             exits = []
                             directions = {
                                 "north": (x, y-1, floor_idx),
@@ -1732,7 +1686,6 @@ def setup_main_ui():
                                 with open(os.path.join(room_dir, "Exits.txt"), "w", encoding="utf-8") as f:
                                     f.write("\n".join(exits))
 
-            # Recheck for filled sections by reloading
             load_main_level_data()
             if current_room[0] is not None:
                 display_room_details_main(current_room[0], current_room[1])
@@ -1799,7 +1752,6 @@ def setup_main_ui():
             redraw_floor()
 
         load_main_level_data()
-
         return save_main_level
 
     # Initialize the Tutorial tab (single-layer grid) so it shows content
