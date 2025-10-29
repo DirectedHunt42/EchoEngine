@@ -12,7 +12,7 @@
 
 ## Echo Engine
 
-**Echo Engine** is a lightweight game engine for creating simple text-based adventure games. Explore worlds, move through rooms, and craft interactive stories—all through text!
+**Echo Engine** is a game engine for creating simple text-based adventure games. Explore worlds, move through rooms, and craft interactive stories—all through text!
 
 ### Features
 
