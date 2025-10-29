@@ -1,6 +1,9 @@
 <p align="left">
   <img src="https://github.com/DirectedHunt42/EchoEngine/blob/main/Engine_editor/Icons/Echo_engine/Echo_engine_transparent.png" alt="Echo Engine Logo" width="250"/>
 </p>
+<p align="left">
+  <img src="https://github.com/DirectedHunt42/EchoEngine/blob/main/Engine_editor/Icons/Nova_foundry/Nova_foundry_wide_transparent.png" alt="Echo Engine Logo" width="100"/>
+</p>
 
 ![Commits](https://img.shields.io/github/commit-activity/m/DirectedHunt42/EchoEngine?color=blue)
 ![Issues](https://img.shields.io/github/issues/DirectedHunt42/EchoEngine)
