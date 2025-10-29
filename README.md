@@ -1,4 +1,4 @@
-<p align="left">
+<p align="center">
   <img src="https://github.com/DirectedHunt42/EchoEngine/blob/main/Engine_editor/Icons/Echo_engine/Echo_engine_transparent.png" alt="Echo Engine Logo" width="250"/>
 </p>
 <p align="left">
