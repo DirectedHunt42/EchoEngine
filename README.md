@@ -7,7 +7,7 @@
 
 ![Commits](https://img.shields.io/github/commit-activity/m/DirectedHunt42/EchoEngine?color=blue)
 ![Issues](https://img.shields.io/github/issues/DirectedHunt42/EchoEngine)
-![License](https://img.shields.io/badge/license-CC%20BY--ND%204.0-blue)
+![License](https://img.shields.io/badge/license-CC%20BY--ND%204.0-purple)
 
 ![Forks](https://img.shields.io/github/forks/DirectedHunt42/EchoEngine)
 ![Stars](https://img.shields.io/github/stars/DirectedHunt42/EchoEngine)
