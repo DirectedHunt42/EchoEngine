@@ -1,8 +1,19 @@
 <p align="center">
-  <img src="https://github.com/DirectedHunt42/EchoEngine/blob/main/Engine_editor/Icons/Echo_engine/Echo_engine_transparent.png" alt="Echo Engine Logo" width="250"/>
+  <picture>
+    <!-- Light mode logo -->
+    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/DirectedHunt42/EchoEngine/blob/main/Engine_editor/Icons/Echo_engine/Echo_engine_transparent.png">
+    <!-- Dark mode logo -->
+    <source media="(prefers-color-scheme: light)" srcset="https://github.com/DirectedHunt42/EchoEngine/blob/main/Engine_editor/Icons/Echo_engine/Echo_engine_transparent_dark.png">
+    <img src="https://github.com/DirectedHunt42/EchoEngine/blob/main/Engine_editor/Icons/Echo_engine/Echo_engine_transparent.png" alt="Echo Engine Logo" width="250"/>
+  </picture>
 </p>
+
 <p align="center">
-  <img src="https://github.com/DirectedHunt42/EchoEngine/blob/main/Engine_editor/Icons/Nova_foundry/Nova_foundry_wide_transparent.png" alt="Echo Engine Logo" width="100"/>
+  <picture>
+    <source media="(prefers-color-scheme: light)" srcset="https://github.com/DirectedHunt42/EchoEngine/blob/main/Engine_editor/Icons/Nova_foundry/Nova_foundry_light.png">
+    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/DirectedHunt42/EchoEngine/blob/main/Engine_editor/Icons/Nova_foundry/Nova_foundry_wide_transparent.png">
+    <img src="https://github.com/DirectedHunt42/EchoEngine/blob/main/Engine_editor/Icons/Nova_foundry/Nova_foundry_wide_transparent.png" alt="Nova Foundry Logo" width="100"/>
+  </picture>
 </p>
 
 <div align="center">
