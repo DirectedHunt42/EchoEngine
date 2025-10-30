@@ -10,7 +10,7 @@
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: light)" srcset="https://github.com/DirectedHunt42/EchoEngine/blob/main/Engine_editor/Icons/Nova_foundry/Nova_foundry_light.png">
+    <source media="(prefers-color-scheme: light)" srcset="https://github.com/DirectedHunt42/EchoEngine/blob/main/Engine_editor/Icons/Nova_foundry/Nova_foundry_wide_transparent_dark.png">
     <source media="(prefers-color-scheme: dark)" srcset="https://github.com/DirectedHunt42/EchoEngine/blob/main/Engine_editor/Icons/Nova_foundry/Nova_foundry_wide_transparent.png">
     <img src="https://github.com/DirectedHunt42/EchoEngine/blob/main/Engine_editor/Icons/Nova_foundry/Nova_foundry_wide_transparent.png" alt="Nova Foundry Logo" width="100"/>
   </picture>
