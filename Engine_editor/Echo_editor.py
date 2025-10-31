@@ -59,7 +59,8 @@ class ToolTip:
 app = ctk.CTk()
 app.title("Echo Editor")
 # ---------- Custom App Icon ----------
-icon_path = os.path.join(resource_base_path, r"Engine_editor\Icons\App_icon\Echo_editor.ico")
+icon_path = os.path.join(resource_base_path, r"Icons/App_icon/Echo_editor.ico")
+print(icon_path)
 if os.path.exists(icon_path):
     try:
         app.iconbitmap(icon_path)
