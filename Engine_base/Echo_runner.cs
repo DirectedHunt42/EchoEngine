@@ -127,7 +127,7 @@ namespace EchoEngine
                 if (File.Exists(fontPath))
                 {
                     privateFonts.AddFontFile(fontPath);
-                    mainFont = new Font(privateFonts.Families[0], 16f, FontStyle.Regular);
+                    mainFont = new Font(privateFonts.Families[0], 12.8f, FontStyle.Regular);
                 }
             }
             catch
@@ -140,7 +140,7 @@ namespace EchoEngine
                 if (File.Exists(titleFontPath))
                 {
                     privateFonts.AddFontFile(titleFontPath);
-                    titleFont = new Font(privateFonts.Families[0], 16f, FontStyle.Bold);
+                    titleFont = new Font(privateFonts.Families[0], 12.8f, FontStyle.Bold);
                 }
             }
             catch
@@ -156,7 +156,7 @@ namespace EchoEngine
                     if (File.Exists(defaultFontPath))
                     {
                         privateFonts.AddFontFile(defaultFontPath);
-                        mainFont = new Font(privateFonts.Families[0], 16f, FontStyle.Regular);
+                        mainFont = new Font(privateFonts.Families[0], 12.8f, FontStyle.Regular);
                     }
                 }
                 catch
@@ -172,7 +172,7 @@ namespace EchoEngine
                     if (File.Exists(defaultFontPath))
                     {
                         privateFonts.AddFontFile(defaultFontPath);
-                        titleFont = new Font(privateFonts.Families[0], 16f, FontStyle.Regular);
+                        titleFont = new Font(privateFonts.Families[0], 12.8f, FontStyle.Regular);
                     }
                 }
                 catch
@@ -183,11 +183,11 @@ namespace EchoEngine
             // Final fallback to Consolas
             if (mainFont == null)
             {
-                mainFont = new Font("Consolas", 16f, FontStyle.Regular);
+                mainFont = new Font("Consolas", 12.8f, FontStyle.Regular);
             }
             if (titleFont == null)
             {
-                titleFont = new Font("Consolas", 16f, FontStyle.Bold);
+                titleFont = new Font("Consolas", 12.8f, FontStyle.Bold);
             }
 
             Panel titleBar = new Panel
