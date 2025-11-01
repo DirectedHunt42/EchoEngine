@@ -1,6 +1,6 @@
 # Echo Editor User Guide
 
-## Version 1.0.6
+## Version 1.0.7
 Welcome to the **Echo Editor**, a graphical user interface (GUI) tool designed to simplify the configuration and setup of your Echo Engine games. Echo Editor allows you to define game metadata (like titles, fonts, and icons), configure narrative elements (such as prolog, cutscenes, and endings), and set core gameplay parameters (health, damage, win conditions) without manually editing text files or code. It handles validation, file copying/conversions, and automatic saving to the appropriate directories in your Echo Engine project structure.
 
 This guide provides a comprehensive walkthrough, including:
@@ -158,7 +158,7 @@ Similar to Tutorial but for core levels. Configure multi-floor grids, damage tex
 - **Tip:** Fixes in setup first—crashes here indicate validation misses.
 
 ### About Tab
-- Credits, version (v1.0.6), links to Nova Foundry.
+- Credits, version (v1.0.7), links to Nova Foundry.
 - **Usage**: Read-only; click links to open browser.
 
 ### Help Tab
