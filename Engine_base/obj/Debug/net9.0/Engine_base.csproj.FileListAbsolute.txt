@@ -1,0 +1,5 @@
+E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0\Engine_base.GeneratedMSBuildEditorConfig.editorconfig
+E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0\Engine_base.AssemblyInfoInputs.cache
+E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0\Engine_base.AssemblyInfo.cs
+E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0\Engine_base.csproj.CoreCompileInputs.cache
+E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0\Engine_base.sourcelink.json
