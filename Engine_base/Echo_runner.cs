@@ -101,14 +101,14 @@ namespace EchoEngine
             try
             {
                 Icon icon = null;
-                string iconPath = Path.Combine("Icons", "Icon.png");
+                string iconPath = Path.Combine("Icons", "Icon.ico");
                 if (File.Exists(iconPath))
                 {
                     icon = new Icon(iconPath);
                 }
                 else
                 {
-                    string defaultIconPath = Path.Combine("Icons", "Default_icon.png");
+                    string defaultIconPath = Path.Combine("Icons", "Default_icon.ico");
                     if (File.Exists(defaultIconPath))
                     {
                         icon = new Icon(defaultIconPath);
@@ -119,7 +119,10 @@ namespace EchoEngine
                     this.Icon = icon;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Icon loading error: " + ex.Message);
+            }
 
             // Load custom fonts if available, else fallback
             PrivateFontCollection privateFonts = new PrivateFontCollection();
@@ -1021,7 +1024,8 @@ namespace EchoEngine
                 // else if (input == "journal"){
                 //     PrintToOutput("\n\n");
                 //     string journal2 = "";
-                //     try {
+                //     try
+                //     {
                 //         string filePath = Path.Combine("Text", "Stories", "Tutorial", "Journal.txt");
                 //         journal2 = File.ReadAllText(filePath);
                 //     }
