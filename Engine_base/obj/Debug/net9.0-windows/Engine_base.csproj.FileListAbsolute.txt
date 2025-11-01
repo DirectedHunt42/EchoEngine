@@ -1,0 +1,15 @@
+E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0-windows\Engine_base.GeneratedMSBuildEditorConfig.editorconfig
+E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0-windows\Engine_base.AssemblyInfoInputs.cache
+E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0-windows\Engine_base.AssemblyInfo.cs
+E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0-windows\Engine_base.csproj.CoreCompileInputs.cache
+E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0-windows\Engine_base.sourcelink.json
+E:\Projects\Programming\Echo Engine\Engine_base\bin\Debug\net9.0-windows\Engine_base.exe
+E:\Projects\Programming\Echo Engine\Engine_base\bin\Debug\net9.0-windows\Engine_base.deps.json
+E:\Projects\Programming\Echo Engine\Engine_base\bin\Debug\net9.0-windows\Engine_base.runtimeconfig.json
+E:\Projects\Programming\Echo Engine\Engine_base\bin\Debug\net9.0-windows\Engine_base.dll
+E:\Projects\Programming\Echo Engine\Engine_base\bin\Debug\net9.0-windows\Engine_base.pdb
+E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0-windows\Engine_base.dll
+E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0-windows\refint\Engine_base.dll
+E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0-windows\Engine_base.pdb
+E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0-windows\Engine_base.genruntimeconfig.cache
+E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0-windows\ref\Engine_base.dll
