@@ -1,6 +1,6 @@
 # Jack Murray
 # Nova Foundry / Echo Editor
-# v1.0.6
+# v1.1.0
 import customtkinter as ctk
 from CTkMessagebox import CTkMessagebox
 from PIL import Image, ImageTk
@@ -363,10 +363,78 @@ def setup_main_ui():
                     # Set the default choice to path
                     path_var.set(1)
                     text_var.set(0)
-    def validate_and_save():
-        # Define which entry fields must always be filled
+    def validate_game_setup():
+        errors = []
         required_text_fields = ["Title", "Base Health", "Damage Chance"]
-        # **MODIFIED**: Fonts are now optional
+        optional_file_fields = ["Font", "Title Font", "Music", "Icon"]
+        for key, widget in inputs.items():
+            path = os.path.join(save_base_path, save_paths[key])
+            # --- Entries ---
+            if isinstance(widget, ctk.CTkEntry):
+                value = widget.get().strip()
+                # New logic for "Win Location", "Win Items", and "Tutorial Items"
+                if key == "Win Location":
+                    # Check for empty input
+                    if not value:
+                        errors.append(f"{key} is required.")
+                        continue
+                   
+                    # Check for "double commas" or commas at start/end
+                    if ",," in value or value.startswith(',') or value.endswith(','):
+                        errors.append(f"{key}: Invalid format. Avoid adjacent commas.")
+                        continue
+                   
+                    # Split by comma and clean up spaces
+                    coords = [c.strip() for c in value.split(',')]
+                   
+                    # Check if there are exactly 3 parts and all are numbers
+                    if len(coords) != 3 or not all(c.lstrip('-').isdigit() for c in coords):
+                        errors.append(f"{key}: Must have exactly three numbers (e.g., X,Y,Z).")
+                        continue
+                elif key in ["Win Items", "Tutorial Items"]:
+                    # Optional, no checks for empty
+                    continue
+                # ---------- Required Text ----------
+                if key in required_text_fields:
+                    if not value:
+                        errors.append(f"{key} is required.")
+                        continue
+                    if key in ["Base Health", "Damage Chance"]:
+                        if not value.isdigit() or int(value) <= 0:
+                            errors.append(f"{key} must be a positive integer.")
+                            continue
+                # ---------- Optional File ----------
+                elif key in optional_file_fields:
+                    if value:
+                        if not os.path.exists(value):
+                            errors.append(f"{key}: file not found.")
+                            continue
+                        if not any(value.lower().endswith(ext) for ext in accepted_extensions[key]):
+                            errors.append(f"{key}: invalid file type. Must be {', '.join(accepted_extensions[key])}")
+                            continue
+            # --- Text sections ---
+            elif isinstance(widget, tuple) and len(widget) == 6:
+                path_entry, textbox, path_var, text_var, err_path_lbl, err_text_lbl = widget
+                if path_var.get():
+                    src = path_entry.get().strip()
+                    if not src:
+                        errors.append(f"{key}: file path is required.")
+                        continue
+                    if not os.path.exists(src):
+                        errors.append(f"{key}: file not found.")
+                        continue
+                    if not src.lower().endswith(".txt"):
+                        errors.append(f"{key}: file must be .txt")
+                        continue
+                elif text_var.get():
+                    txt = textbox.get("1.0","end").strip()
+                    if not txt:
+                        errors.append(f"{key}: text required.")
+                else:
+                    errors.append(f"{key}: must provide either file or text.")
+        return errors
+    def save_game_setup():
+        # Define which entry fields must always be enetered
         required_file_fields = []
         optional_file_fields = ["Font", "Title Font", "Music", "Icon"]
         errors = []
@@ -380,8 +448,7 @@ def setup_main_ui():
                 if key == "Win Location":
                     # Check for empty input
                     if not value:
-                        errors.append(f"{key} is required.")
-                        widget.configure(fg_color="#661111")
+                        widget.configure(fg_color="#444444")
                         continue
                    
                     # Check for "double commas" or commas at start/end
@@ -417,11 +484,8 @@ def setup_main_ui():
                     continue
                 # Old logic for other fields (no changes here)
                 # ---------- Required Text ----------
-                if key in required_text_fields:
-                    if not value:
-                        errors.append(f"{key} is required.")
-                        widget.configure(fg_color="#661111")
-                        continue
+                # Removed required checks, treat as optional text
+                if value:
                     if key in ["Base Health", "Damage Chance"]:
                         if not value.isdigit() or int(value) <= 0:
                             errors.append(f"{key} must be a positive integer.")
@@ -430,22 +494,13 @@ def setup_main_ui():
                     widget.configure(fg_color="#444444")
                     with open(path, "w", encoding="utf-8") as f:
                         f.write(value)
-                # ---------- Required File ----------
-                elif key in required_file_fields:
-                    if not value:
-                        errors.append(f"{key} is required.")
-                        widget.configure(fg_color="#661111")
-                        continue
-                    if not os.path.exists(value):
-                        errors.append(f"{key}: file not found.")
-                        widget.configure(fg_color="#661111")
-                        continue
-                    if not any(value.lower().endswith(ext) for ext in accepted_extensions[key]):
-                        errors.append(f"{key}: invalid file type. Must be {', '.join(accepted_extensions[key])}")
-                        widget.configure(fg_color="#661111")
-                        continue
+                else:
+                    with open(path, "w", encoding="utf-8") as f:
+                        f.write("")
                     widget.configure(fg_color="#444444")
-                    shutil.copy(value, path)
+                # ---------- Required File ----------
+                if key in required_file_fields:
+                    widget.configure(fg_color="#444444")
                 # ---------- Optional File ----------
                 elif key in optional_file_fields:
                     if value:
@@ -502,40 +557,32 @@ def setup_main_ui():
                 path_entry, textbox, path_var, text_var, err_path_lbl, err_text_lbl = widget
                 if path_var.get():
                     src = path_entry.get().strip()
-                    if not src:
-                        errors.append(f"{key}: file path is required.")
-                        path_entry.configure(fg_color="#661111")
-                        err_path_lbl.configure(text="File required")
-                        continue
-                    if not os.path.exists(src):
-                        errors.append(f"{key}: file not found.")
-                        path_entry.configure(fg_color="#661111")
-                        err_path_lbl.configure(text="File not found")
-                        continue
-                    if not src.lower().endswith(".txt"):
-                        errors.append(f"{key}: file must be .txt")
-                        path_entry.configure(fg_color="#661111")
-                        err_path_lbl.configure(text="Invalid file type")
-                        continue
-                    # Instead of copying, read text and save it
-                    with open(src, "r", encoding="utf-8") as f_in, open(path, "w", encoding="utf-8") as f_out:
-                        f_out.write(f_in.read())
-                    path_entry.configure(fg_color="#444444")
-                    err_path_lbl.configure(text="")
-                elif text_var.get():
-                    txt = textbox.get("1.0","end").strip()
-                    if not txt:
-                        errors.append(f"{key}: text required.")
-                        textbox.configure(fg_color="#661111")
-                        err_text_lbl.configure(text="Text required")
+                    if src:
+                        if not os.path.exists(src):
+                            errors.append(f"{key}: file not found.")
+                            path_entry.configure(fg_color="#661111")
+                            err_path_lbl.configure(text="File not found")
+                            continue
+                        if not src.lower().endswith(".txt"):
+                            errors.append(f"{key}: file must be .txt")
+                            path_entry.configure(fg_color="#661111")
+                            err_path_lbl.configure(text="Invalid file type")
+                            continue
+                        # Instead of copying, read text and save it
+                        with open(src, "r", encoding="utf-8") as f_in, open(path, "w", encoding="utf-8") as f_out:
+                            f_out.write(f_in.read())
+                        path_entry.configure(fg_color="#444444")
+                        err_path_lbl.configure(text="")
                     else:
                         with open(path, "w", encoding="utf-8") as f:
-                            f.write(txt)
-                        textbox.configure(fg_color="#444444")
-                        err_text_lbl.configure(text="")
-                else:
-                    errors.append(f"{key}: must provide either file or text.")
-                    err_path_lbl.configure(text="Select file or text")
+                            f.write("")
+                        path_entry.configure(fg_color="#444444")
+                        err_path_lbl.configure(text="")
+                elif text_var.get():
+                    txt = textbox.get("1.0","end").strip()
+                    with open(path, "w", encoding="utf-8") as f:
+                        f.write(txt)
+                    textbox.configure(fg_color="#444444")
                     err_text_lbl.configure(text="")
         if errors:
             CTkMessagebox(title="Validation Error", message="\n".join(errors), icon="cancel")
@@ -548,7 +595,7 @@ def setup_main_ui():
     # ========================= Save Button =========================
     save_button = ctk.CTkButton(game_setup_tab, text="Save", font=(custom_font_family,14),
                                  fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black",
-                                 command=validate_and_save)
+                                 command=save_game_setup)
     save_button.place(relx=0.5, rely=1.0, anchor="s", y=-10)
     save_tutorial_button = ctk.CTkButton(tutorial_tab, text="Save", font=(custom_font_family,14),
                                  fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black",
@@ -929,8 +976,21 @@ def setup_main_ui():
                         except ValueError:
                             pass
             redraw_grid_tutorial()
+        def check_tutorial_rooms():
+            errors = []
+            for y in range(GRID_DIM_Y):
+                for x in range(GRID_DIM_X):
+                    cell = grid_state[y][x]
+                    if cell is not None:
+                        if not cell.get('name', '').strip():
+                            errors.append(f"Tutorial Room ({x}, {y}): Name is missing.")
+                        if not cell.get('desc', '').strip():
+                            errors.append(f"Tutorial Room ({x}, {y}): Description is missing.")
+                        if not cell.get('findable_items', '').strip():
+                            errors.append(f"Tutorial Room ({x}, {y}): Findable Items is missing.")
+            return errors
         load_tutorial_data()
-        return save_tutorial, load_tutorial_data
+        return save_tutorial, load_tutorial_data, check_tutorial_rooms
     def setup_main_level_tab(parent_tab, custom_font_family="Arial"):
         GRID_SIZE = 40
         GRID_DIM_X, GRID_DIM_Y = 33, 20
@@ -1629,12 +1689,25 @@ def setup_main_ui():
                 floors[0]["grid_state"][0][0] = {'name': 'Start Room', 'desc': '', 'findable_items': '', 'usable_item': '', 'item_used_text': '', 'item_found': '', 'damage_text': ''}
             refresh_floor_list()
             redraw_floor()
+        def check_main_rooms():
+            errors = []
+            for floor_idx in sorted(floors.keys()):
+                grid_state = floors[floor_idx]["grid_state"]
+                for y in range(GRID_DIM_Y):
+                    for x in range(GRID_DIM_X):
+                        cell = grid_state[y][x]
+                        if cell is not None:
+                            fields = ['name', 'desc', 'findable_items', 'usable_item', 'item_used_text', 'item_found', 'damage_text']
+                            for field in fields:
+                                if not cell.get(field, '').strip():
+                                    errors.append(f"Main Floor {floor_idx+1} Room ({x}, {y}): {field.replace('_', ' ').title()} is missing.")
+            return errors
         load_main_level_data()
-        return save_main_level
+        return save_main_level, load_main_level_data, check_main_rooms
     # Initialize the Tutorial tab (single-layer grid) so it shows content
-    save_tutorial, load_tutorial_data = setup_tutorial_tab(tutorial_tab, custom_font_family)
+    save_tutorial, load_tutorial_data, check_tutorial = setup_tutorial_tab(tutorial_tab, custom_font_family)
     # Initialize the Main Level tab (multi-floor editor)
-    save_main_level = setup_main_level_tab(main_level_tab, custom_font_family)
+    save_main_level, load_main_level_data, check_main = setup_main_level_tab(main_level_tab, custom_font_family)
     save_tutorial_button.configure(command=save_tutorial)
     save_main_level_button.configure(command=save_main_level)
     # ========================= Return to Hub & Test App & Export =========================
@@ -1715,6 +1788,13 @@ def setup_main_ui():
         if not export_path:
             CTkMessagebox(title="Error", message="Please specify an export path.", icon="cancel")
             return
+        errors = validate_game_setup() + check_tutorial() + check_main()
+        if errors:
+            CTkMessagebox(title="Validation Error", message="\n".join(errors), icon="cancel")
+            return
+        save_game_setup()
+        save_tutorial()
+        save_main_level()
         try:
             script_dir = save_base_path
             working_game_dir = os.path.join(script_dir, "../Working_game")
@@ -1752,7 +1832,7 @@ def setup_main_ui():
     echo_path = os.path.join(base_path, "Icons", "Echo_engine", "Echo_engine_transparent.png")
     display_image_scaled(nova_path, about_container, scale=0.2)
     display_image_scaled(echo_path, about_container, scale=0.2)
-    version_label = ctk.CTkLabel(about_container,text="Echo Editor v1.0.6",font=(custom_font_family,16))
+    version_label = ctk.CTkLabel(about_container,text="Echo Editor v1.1.0",font=(custom_font_family,16))
     version_label.pack(pady=(10,20))
     license_text = (
         "© Nova Foundry 2025. All rights reserved.\n\n"
