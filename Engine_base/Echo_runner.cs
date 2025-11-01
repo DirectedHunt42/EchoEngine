@@ -11,6 +11,7 @@ using System.Media;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
+using System.Runtime.InteropServices;
 
 namespace EchoEngine
 {
@@ -21,6 +22,9 @@ namespace EchoEngine
         private volatile string userInput = null;
         private readonly object inputLock = new object();
         private int promptPosition = 0;
+
+        [DllImport("uxtheme.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern int SetWindowTheme(IntPtr hWnd, string pszSubAppName, string? pszSubIdList);
 
         // Always scroll to the end of the output area
         private void ScrollToEnd()
@@ -225,7 +229,8 @@ namespace EchoEngine
                 Width = 45,
                 Height = 28
             };
-            minBtn.FlatAppearance.BorderSize = 0;
+            minBtn.FlatAppearance.BorderColor = Color.White;
+            minBtn.FlatAppearance.BorderSize = 1;
             minBtn.Click += (s, e) => this.WindowState = FormWindowState.Minimized;
             buttonPanel.Controls.Add(minBtn);
 
@@ -238,7 +243,8 @@ namespace EchoEngine
                 Width = 45,
                 Height = 28
             };
-            closeBtn.FlatAppearance.BorderSize = 0;
+            closeBtn.FlatAppearance.BorderColor = Color.White;
+            closeBtn.FlatAppearance.BorderSize = 1;
             closeBtn.Click += (s, e) => Application.Exit();
             buttonPanel.Controls.Add(closeBtn);
             closeBtn.Dock = DockStyle.Right;
@@ -258,6 +264,13 @@ namespace EchoEngine
                 }
             };
 
+            Panel separator = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 1,
+                BackColor = Color.White
+            };
+
             outputArea = new TextBox
             {
                 Multiline = true,
@@ -268,7 +281,7 @@ namespace EchoEngine
                 BackColor = Color.Black,
                 ForeColor = Color.FromArgb(220, 220, 220),
                 Dock = DockStyle.Fill,
-                BorderStyle = BorderStyle.FixedSingle
+                BorderStyle = BorderStyle.None
             };
 
             Panel contentPanel = new Panel
@@ -277,6 +290,7 @@ namespace EchoEngine
                 BackColor = Color.Black
             };
             contentPanel.Controls.Add(outputArea);
+            contentPanel.Controls.Add(separator);
             contentPanel.Controls.Add(titleBar);
 
             this.Controls.Add(contentPanel);
@@ -284,6 +298,12 @@ namespace EchoEngine
 
             outputArea.KeyDown += OutputArea_KeyDown;
             outputArea.KeyPress += OutputArea_KeyPress;
+
+            this.Load += (s, e) =>
+            {
+                SetWindowTheme(this.Handle, "DarkMode_Explorer", null);
+                SetWindowTheme(outputArea.Handle, "DarkMode_Explorer", null);
+            };
 
             this.Shown += (s, e) =>
             {
@@ -498,7 +518,7 @@ namespace EchoEngine
             bool menuLoop = true;
 
             ClearOutput();
-            PrintToOutput("CLICK AND PRESS ENTER TO START... ");
+            PrintToOutput("PRESS ENTER TO START... ");
             GetUserInput();
             ClearOutput();
 
