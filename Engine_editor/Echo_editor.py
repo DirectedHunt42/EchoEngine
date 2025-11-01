@@ -764,6 +764,35 @@ def setup_main_ui():
                                             text_color="#AAAAAA",
                                             wraplength=info_display_frame.winfo_width() - 30)
             placeholder_text.pack(pady=(5, 10), padx=10)
+        def show_remove_btn_tutorial(grid_x, grid_y):
+            cell = grid_state[grid_y][grid_x]
+            if 'remove_btn' in cell and cell['remove_btn'] is not None:
+                return
+            btn = ctk.CTkButton(cell['frame'], text="−", width=20, height=20,
+                                corner_radius=0, fg_color="#661111", hover_color="#881111",
+                                command=lambda: remove_room_tutorial(grid_x, grid_y))
+            btn.place(relx=1.0, rely=0.0, anchor="ne")
+            cell['remove_btn'] = btn
+        def hide_remove_btn_tutorial(grid_x, grid_y):
+            cell = grid_state[grid_y][grid_x]
+            if 'remove_btn' in cell and cell['remove_btn'] is not None:
+                cell['remove_btn'].destroy()
+                cell['remove_btn'] = None
+        def hide_all_remove_buttons_tutorial():
+            for y in range(GRID_DIM_Y):
+                for x in range(GRID_DIM_X):
+                    cell = grid_state[y][x]
+                    if cell and 'remove_btn' in cell and cell['remove_btn'] is not None:
+                        cell['remove_btn'].destroy()
+                        cell['remove_btn'] = None
+        def show_all_remove_buttons_tutorial():
+            for y in range(GRID_DIM_Y):
+                for x in range(GRID_DIM_X):
+                    if grid_state[y][x] is not None:
+                        if can_remove_tutorial(x, y):
+                            show_remove_btn_tutorial(x, y)
+                        else:
+                            hide_remove_btn_tutorial(x, y)
         def add_room_tutorial(grid_x, grid_y, is_immovable=False, initial_name="Room"):
             nonlocal grid_state
             room = ctk.CTkFrame(grid_container, width=GRID_SIZE, height=GRID_SIZE,
@@ -784,9 +813,12 @@ def setup_main_ui():
                 lbl.bind("<Button-1>", lambda e, x=grid_x, y=grid_y: display_room_details_tutorial(x, y))
             except Exception:
                 pass
-            # MODIFIED: No remove button on the room itself; handled by Remove Mode
             if not is_immovable:
-                room.bind("<Enter>", lambda e: show_adjacent_placeholders_tutorial())
+                def on_room_enter(e, x=grid_x, y=grid_y):
+                    if is_add_mode[0]:
+                        show_adjacent_placeholders_tutorial()
+                room.bind("<Enter>", on_room_enter)
+                lbl.bind("<Enter>", on_room_enter)
         def place_room_tutorial(grid_x, grid_y):
             add_room_tutorial(grid_x, grid_y, initial_name=f"Room {grid_x}-{grid_y}")
             show_adjacent_placeholders_tutorial()
@@ -801,40 +833,27 @@ def setup_main_ui():
                     pass
             plus_buttons.clear()
            
-            # MODIFIED: Check mode and show appropriate buttons
+            if not is_add_mode[0]:  # Remove Mode
+                show_all_remove_buttons_tutorial()
+                return
+           
+            # Add Mode: Show green "+" buttons around existing rooms
             directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
             for y in range(GRID_DIM_Y):
                 for x in range(GRID_DIM_X):
                     if grid_state[y][x] is not None:
-                        if not is_add_mode[0]: # Remove Mode
-                            # Show red "−" buttons on removable exterior rooms
-                            if can_remove_tutorial(x, y):
-                                for dx, dy in directions:
-                                    nx, ny = x + dx, y + dy
-                                    if 0 <= nx < GRID_DIM_X and 0 <= ny < GRID_DIM_Y and grid_state[ny][nx] is None:
-                                        key = (nx, ny)
-                                        if key not in plus_buttons:
-                                            btn = ctk.CTkButton(grid_container, text="−", width=GRID_SIZE, height=GRID_SIZE,
-                                                                corner_radius=0, fg_color="#661111", hover_color="#881111",
-                                                                border_width=2, border_color="white",
-                                                                command=lambda gx=x, gy=y: remove_room_tutorial(gx, gy))
-                                            btn.place(x=nx * GRID_SIZE + grid_canvas.winfo_x(),
-                                                    y=ny * GRID_SIZE + grid_canvas.winfo_y())
-                                            plus_buttons[key] = btn
-                        else: # Add Mode
-                            # Show green "+" buttons around existing rooms
-                            for dx, dy in directions:
-                                nx, ny = x + dx, y + dy
-                                if 0 <= nx < GRID_DIM_X and 0 <= ny < GRID_DIM_Y and grid_state[ny][nx] is None:
-                                    key = (nx, ny)
-                                    if key not in plus_buttons:
-                                        btn = ctk.CTkButton(grid_container, text="+", width=GRID_SIZE, height=GRID_SIZE,
-                                                            corner_radius=0, fg_color=BACKGROUND_COLOR, hover_color="#555555",
-                                                            border_width=2, border_color="white",
-                                                            command=lambda gx=nx, gy=ny: place_room_tutorial(gx, gy))
-                                        btn.place(x=nx * GRID_SIZE + grid_canvas.winfo_x(),
-                                                y=ny * GRID_SIZE + grid_canvas.winfo_y())
-                                        plus_buttons[key] = btn
+                        for dx, dy in directions:
+                            nx, ny = x + dx, y + dy
+                            if 0 <= nx < GRID_DIM_X and 0 <= ny < GRID_DIM_Y and grid_state[ny][nx] is None:
+                                key = (nx, ny)
+                                if key not in plus_buttons:
+                                    btn = ctk.CTkButton(grid_container, text="+", width=GRID_SIZE, height=GRID_SIZE,
+                                                        corner_radius=0, fg_color=BACKGROUND_COLOR, hover_color="#555555",
+                                                        border_width=2, border_color="white",
+                                                        command=lambda gx=nx, gy=ny: place_room_tutorial(gx, gy))
+                                    btn.place(x=nx * GRID_SIZE + grid_canvas.winfo_x(),
+                                              y=ny * GRID_SIZE + grid_canvas.winfo_y())
+                                    plus_buttons[key] = btn
         def redraw_grid_tutorial():
             nonlocal grid_state
             for w in grid_container.winfo_children():
@@ -864,6 +883,8 @@ def setup_main_ui():
             toggle_button.configure(text="Remove Mode" if is_add_mode[0] else "Add Mode",
                                 fg_color="#444444" if is_add_mode[0] else "#661111",
                                 hover_color="#666666" if is_add_mode[0] else "#881111")
+            if is_add_mode[0]:
+                hide_all_remove_buttons_tutorial()
             show_adjacent_placeholders_tutorial()
         # UI layout
         main_frame = ctk.CTkFrame(parent_tab, fg_color="#2b2b2b")
@@ -1233,6 +1254,42 @@ def setup_main_ui():
                                             text_color="#AAAAAA",
                                             wraplength=info_display_frame.winfo_width() - 30)
             placeholder_text.pack(pady=(5, 10), padx=10)
+        def show_remove_btn_main(grid_x, grid_y):
+            floor = floors[current_floor[0]]
+            grid_state = floor["grid_state"]
+            cell = grid_state[grid_y][grid_x]
+            if 'remove_btn' in cell and cell['remove_btn'] is not None:
+                return
+            btn = ctk.CTkButton(cell['frame'], text="−", width=20, height=20,
+                                corner_radius=0, fg_color="#661111", hover_color="#881111",
+                                command=lambda: remove_room_main(grid_x, grid_y))
+            btn.place(relx=1.0, rely=0.0, anchor="ne")
+            cell['remove_btn'] = btn
+        def hide_remove_btn_main(grid_x, grid_y):
+            floor = floors[current_floor[0]]
+            grid_state = floor["grid_state"]
+            cell = grid_state[grid_y][grid_x]
+            if 'remove_btn' in cell and cell['remove_btn'] is not None:
+                cell['remove_btn'].destroy()
+                cell['remove_btn'] = None
+        def hide_all_remove_buttons_main():
+            for floor_idx in floors:
+                grid_state = floors[floor_idx]["grid_state"]
+                for y in range(GRID_DIM_Y):
+                    for x in range(GRID_DIM_X):
+                        cell = grid_state[y][x]
+                        if cell and 'remove_btn' in cell and cell['remove_btn'] is not None:
+                            cell['remove_btn'].destroy()
+                            cell['remove_btn'] = None
+        def show_all_remove_buttons_main():
+            grid_state = floors[current_floor[0]]["grid_state"]
+            for y in range(GRID_DIM_Y):
+                for x in range(GRID_DIM_X):
+                    if grid_state[y][x] is not None:
+                        if can_remove_main(current_floor[0], x, y):
+                            show_remove_btn_main(x, y)
+                        else:
+                            hide_remove_btn_main(x, y)
         def refresh_floor_list():
             for widget in floor_list_frame.winfo_children():
                 widget.destroy()
@@ -1368,9 +1425,12 @@ def setup_main_ui():
                 lbl.bind("<Button-1>", lambda e, x=grid_x, y=grid_y: display_room_details_main(x, y))
             except Exception:
                 pass
-            # MODIFIED: No remove button on the room itself; handled by Remove Mode
             if not is_immovable:
-                room.bind("<Enter>", lambda e: show_adjacent_placeholders())
+                def on_room_enter(e, x=grid_x, y=grid_y):
+                    if is_add_mode[0]:
+                        show_adjacent_placeholders()
+                room.bind("<Enter>", on_room_enter)
+                lbl.bind("<Enter>", on_room_enter)
         def place_room_on_floor(grid_x, grid_y):
             add_room_to_floor(grid_x, grid_y, initial_name=f"Room {grid_x}-{grid_y}")
             show_adjacent_placeholders()
@@ -1385,102 +1445,58 @@ def setup_main_ui():
                     pass
             plus_buttons.clear()
            
-            # MODIFIED: Check mode and show appropriate buttons
-            if is_add_mode[0]: # Add Mode
-                # Add based on floor below
-                floor_below_idx = current_floor[0] - 1
-                if floor_below_idx in floors:
-                    floor_below = floors[floor_below_idx]["grid_state"]
-                    for y in range(GRID_DIM_Y):
-                        for x in range(GRID_DIM_X):
-                            if floor_below[y][x] is not None:
-                                if grid_state[y][x] is None:
-                                    btn = ctk.CTkButton(grid_container, text="+", width=20, height=20,
-                                                        corner_radius=0, fg_color=BACKGROUND_COLOR, hover_color="#666666",
-                                                        border_width=BORDER_WIDTH, border_color=BORDER_COLOR,
-                                                        command=lambda gx=x, gy=y: place_room_on_floor(gx, gy))
-                                    btn.place(x=x * GRID_SIZE + grid_canvas.winfo_x() + GRID_SIZE//2 - 10,
-                                            y=y * GRID_SIZE + grid_canvas.winfo_y() + GRID_SIZE//2 - 10)
-                                    plus_buttons[f"below_{x}_{y}"] = btn
-                # Add based on floor above
-                floor_above_idx = current_floor[0] + 1
-                if floor_above_idx in floors:
-                    floor_above = floors[floor_above_idx]["grid_state"]
-                    for y in range(GRID_DIM_Y):
-                        for x in range(GRID_DIM_X):
-                            if floor_above[y][x] is not None:
-                                if grid_state[y][x] is None:
-                                    btn = ctk.CTkButton(grid_container, text="+", width=20, height=20,
-                                                        corner_radius=0, fg_color=BACKGROUND_COLOR, hover_color="#666666",
-                                                        border_width=BORDER_WIDTH, border_color=BORDER_COLOR,
-                                                        command=lambda gx=x, gy=y: place_room_on_floor(gx, gy))
-                                    btn.place(x=x * GRID_SIZE + grid_canvas.winfo_x() + GRID_SIZE//2 - 10,
-                                            y=y * GRID_SIZE + grid_canvas.winfo_y() + GRID_SIZE//2 - 10)
-                                    plus_buttons[f"above_{x}_{y}"] = btn
-                # Add plus buttons around existing rooms on current floor
-                directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+            if not is_add_mode[0]:  # Remove Mode
+                show_all_remove_buttons_main()
+                return
+           
+            # Add Mode
+            # Add based on floor below
+            floor_below_idx = current_floor[0] - 1
+            if floor_below_idx in floors:
+                floor_below = floors[floor_below_idx]["grid_state"]
                 for y in range(GRID_DIM_Y):
                     for x in range(GRID_DIM_X):
-                        if grid_state[y][x] is not None:
-                            for dx, dy in directions:
-                                nx, ny = x + dx, y + dy
-                                if 0 <= nx < GRID_DIM_X and 0 <= ny < GRID_DIM_Y and grid_state[ny][nx] is None:
-                                    key = (nx, ny)
-                                    if key not in plus_buttons:
-                                        btn = ctk.CTkButton(grid_container, text="+", width=GRID_SIZE, height=GRID_SIZE,
-                                                            corner_radius=0, fg_color=BACKGROUND_COLOR, hover_color="#555555",
-                                                            border_width=BORDER_WIDTH, border_color=BORDER_COLOR,
-                                                            command=lambda gx=nx, gy=ny: place_room_on_floor(gx, gy))
-                                        btn.place(x=nx * GRID_SIZE + grid_canvas.winfo_x(),
-                                                y=ny * GRID_SIZE + grid_canvas.winfo_y())
-                                        plus_buttons[key] = btn
-            else: # Remove Mode
-                # Show red "−" buttons for removable rooms
-                floor_below_idx = current_floor[0] - 1
-                floor_above_idx = current_floor[0] + 1
+                        if floor_below[y][x] is not None:
+                            if grid_state[y][x] is None:
+                                btn = ctk.CTkButton(grid_container, text="+", width=20, height=20,
+                                                    corner_radius=0, fg_color=BACKGROUND_COLOR, hover_color="#666666",
+                                                    border_width=BORDER_WIDTH, border_color=BORDER_COLOR,
+                                                    command=lambda gx=x, gy=y: place_room_on_floor(gx, gy))
+                                btn.place(x=x * GRID_SIZE + grid_canvas.winfo_x() + GRID_SIZE//2 - 10,
+                                        y=y * GRID_SIZE + grid_canvas.winfo_y() + GRID_SIZE//2 - 10)
+                                plus_buttons[f"below_{x}_{y}"] = btn
+            # Add based on floor above
+            floor_above_idx = current_floor[0] + 1
+            if floor_above_idx in floors:
+                floor_above = floors[floor_above_idx]["grid_state"]
                 for y in range(GRID_DIM_Y):
                     for x in range(GRID_DIM_X):
-                        if grid_state[y][x] is not None and can_remove_main(current_floor[0], x, y):
-                            # Horizontal connections
-                            directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
-                            for dx, dy in directions:
-                                nx, ny = x + dx, y + dy
-                                if 0 <= nx < GRID_DIM_X and 0 <= ny < GRID_DIM_Y and grid_state[ny][nx] is None:
-                                    key = (nx, ny)
-                                    if key not in plus_buttons:
-                                        btn = ctk.CTkButton(grid_container, text="−", width=GRID_SIZE, height=GRID_SIZE,
-                                                            corner_radius=0, fg_color="#661111", hover_color="#881111",
-                                                            border_width=BORDER_WIDTH, border_color=BORDER_COLOR,
-                                                            command=lambda gx=x, gy=y: remove_room_main(gx, gy))
-                                        btn.place(x=nx * GRID_SIZE + grid_canvas.winfo_x(),
-                                                y=ny * GRID_SIZE + grid_canvas.winfo_y())
-                                        plus_buttons[key] = btn
-                            # Vertical connections (below)
-                            if floor_below_idx in floors:
-                                floor_below = floors[floor_below_idx]["grid_state"]
-                                if floor_below[y][x] is not None and grid_state[y][x] is not None:
-                                    key = f"below_{x}_{y}"
-                                    if key not in plus_buttons:
-                                        btn = ctk.CTkButton(grid_container, text="−", width=20, height=20,
-                                                            corner_radius=0, fg_color="#661111", hover_color="#881111",
-                                                            border_width=BORDER_WIDTH, border_color=BORDER_COLOR,
-                                                            command=lambda gx=x, gy=y: remove_room_main(gx, gy))
-                                        btn.place(x=x * GRID_SIZE + grid_canvas.winfo_x() + GRID_SIZE//2 - 10,
-                                                y=y * GRID_SIZE + grid_canvas.winfo_y() + GRID_SIZE//2 - 10)
-                                        plus_buttons[key] = btn
-                            # Vertical connections (above)
-                            if floor_above_idx in floors:
-                                floor_above = floors[floor_above_idx]["grid_state"]
-                                if floor_above[y][x] is not None and grid_state[y][x] is not None:
-                                    key = f"above_{x}_{y}"
-                                    if key not in plus_buttons:
-                                        btn = ctk.CTkButton(grid_container, text="−", width=20, height=20,
-                                                            corner_radius=0, fg_color="#661111", hover_color="#881111",
-                                                            border_width=BORDER_WIDTH, border_color=BORDER_COLOR,
-                                                            command=lambda gx=x, gy=y: remove_room_main(gx, gy))
-                                        btn.place(x=x * GRID_SIZE + grid_canvas.winfo_x() + GRID_SIZE//2 - 10,
-                                                y=y * GRID_SIZE + grid_canvas.winfo_y() + GRID_SIZE//2 - 10)
-                                        plus_buttons[key] = btn
+                        if floor_above[y][x] is not None:
+                            if grid_state[y][x] is None:
+                                btn = ctk.CTkButton(grid_container, text="+", width=20, height=20,
+                                                    corner_radius=0, fg_color=BACKGROUND_COLOR, hover_color="#666666",
+                                                    border_width=BORDER_WIDTH, border_color=BORDER_COLOR,
+                                                    command=lambda gx=x, gy=y: place_room_on_floor(gx, gy))
+                                btn.place(x=x * GRID_SIZE + grid_canvas.winfo_x() + GRID_SIZE//2 - 10,
+                                        y=y * GRID_SIZE + grid_canvas.winfo_y() + GRID_SIZE//2 - 10)
+                                plus_buttons[f"above_{x}_{y}"] = btn
+            # Add plus buttons around existing rooms on current floor
+            directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+            for y in range(GRID_DIM_Y):
+                for x in range(GRID_DIM_X):
+                    if grid_state[y][x] is not None:
+                        for dx, dy in directions:
+                            nx, ny = x + dx, y + dy
+                            if 0 <= nx < GRID_DIM_X and 0 <= ny < GRID_DIM_Y and grid_state[ny][nx] is None:
+                                key = (nx, ny)
+                                if key not in plus_buttons:
+                                    btn = ctk.CTkButton(grid_container, text="+", width=GRID_SIZE, height=GRID_SIZE,
+                                                        corner_radius=0, fg_color=BACKGROUND_COLOR, hover_color="#555555",
+                                                        border_width=BORDER_WIDTH, border_color=BORDER_COLOR,
+                                                        command=lambda gx=nx, gy=ny: place_room_on_floor(gx, gy))
+                                    btn.place(x=nx * GRID_SIZE + grid_canvas.winfo_x(),
+                                            y=ny * GRID_SIZE + grid_canvas.winfo_y())
+                                    plus_buttons[key] = btn
         def redraw_floor():
             for w in grid_container.winfo_children():
                 if w != grid_canvas:
@@ -1526,6 +1542,8 @@ def setup_main_ui():
             toggle_button.configure(text="Remove Mode" if is_add_mode[0] else "Add Mode",
                                 fg_color="#444444" if is_add_mode[0] else "#661111",
                                 hover_color="#666666" if is_add_mode[0] else "#881111")
+            if is_add_mode[0]:
+                hide_all_remove_buttons_main()
             show_adjacent_placeholders()
         # UI layout
         main_frame = ctk.CTkFrame(parent_tab, fg_color="#2b2b2b")
