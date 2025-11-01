@@ -11,7 +11,6 @@ using System.Media;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
-using System.Runtime.InteropServices;
 
 namespace EchoEngine
 {
@@ -358,7 +357,7 @@ namespace EchoEngine
                 outputBuffer.Length = 0;
                 outputArea.Text = "";
                 // Get logo lines
-                string[] logoLines = logo.Split('\n');
+                string[] logoLines = logo.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
                 // Calculate output area width in characters
                 using (Graphics g = outputArea.CreateGraphics())
                 {
@@ -378,7 +377,7 @@ namespace EchoEngine
                         string trimmed = line.Length > areaWidthChars ? line.Substring(0, areaWidthChars) : line;
                         int horizontalPadding = (areaWidthChars - trimmed.Length) / 2;
                         for (int i = 0; i < horizontalPadding; i++) centeredLogo.Append(' ');
-                        centeredLogo.Append(trimmed).Append("\n");
+                        centeredLogo.AppendLine(trimmed);
                     }
                     // Calculate padding for vertical centering
                     int lines = logoLines.Length;
@@ -387,7 +386,7 @@ namespace EchoEngine
                     int fontHeight = (int)fontHeightF;
                     int padLines = Math.Max(0, (areaHeight / fontHeight - lines) / 2);
                     StringBuilder verticalPad = new StringBuilder();
-                    for (int i = 0; i < padLines; i++) verticalPad.Append("\n");
+                    for (int i = 0; i < padLines; i++) verticalPad.AppendLine();
                     outputArea.Text = verticalPad + centeredLogo.ToString();
                     outputArea.SelectionStart = 0;
                 }
@@ -432,6 +431,7 @@ namespace EchoEngine
         // Print to the output area (with optional delay for typewriter effect and skip on space)
         public void PrintToOutput(string text, int delayMs = 0)
         {
+            text = text.Replace("\n", Environment.NewLine);
             bool skip = false;
             KeyEventHandler skipHandler = delegate(object? sender, KeyEventArgs e)
             {
@@ -491,8 +491,8 @@ namespace EchoEngine
         // Main game logic (refactored from main)
         public void RunGame(string windowTitle)
         {
-            string menuText = windowTitle + "\n\n MAIN MENU\n\n  PLAY    - [1]\n  HELP    - [2]\n  EXIT    - [3]\n  CREDITS - [4]\n  RESET   - [5]\n\n >> ";
-            string helpText = "TO NAVIGATE THE WORLD, USE SIMPLE COMMANDS\n\nAVALABLE COMMANDS:\n NORTH\n SOUTH\n EAST\n WEST\n UP\n DOWN\n INVENTORY\n SEARCH\n USE\n MENU\n (ALL LOWER CASE)";
+            string menuText = windowTitle + Environment.NewLine + Environment.NewLine + " MAIN MENU" + Environment.NewLine + Environment.NewLine + "  PLAY    - [1]" + Environment.NewLine + "  HELP    - [2]" + Environment.NewLine + "  EXIT    - [3]" + Environment.NewLine + "  CREDITS - [4]" + Environment.NewLine + "  RESET   - [5]" + Environment.NewLine + Environment.NewLine + " >> ";
+            string helpText = "TO NAVIGATE THE WORLD, USE SIMPLE COMMANDS" + Environment.NewLine + Environment.NewLine + "AVALABLE COMMANDS:" + Environment.NewLine + " north" + Environment.NewLine + " south" + Environment.NewLine + " east" + Environment.NewLine + " west" + Environment.NewLine + " up" + Environment.NewLine + " down" + Environment.NewLine + " inventory" + Environment.NewLine + " search" + Environment.NewLine + " use" + Environment.NewLine + " menu";
             int menuInput = 0;
             string? location = null;
             bool menuLoop = true;
@@ -566,7 +566,7 @@ namespace EchoEngine
                 {
                     ClearOutput();
                     PrintToOutput(helpText, 10);
-                    PrintToOutput("\n\nPRESS ENTER TO CONTINUE... ");
+                    PrintToOutput(Environment.NewLine + Environment.NewLine + "PRESS ENTER TO CONTINUE... ");
                     GetUserInput();
                     ClearOutput();
                 }
@@ -582,7 +582,7 @@ namespace EchoEngine
                     {
                         if (File.Exists(creditsPath))
                         {
-                            creditsText = File.ReadAllText(creditsPath);
+                            creditsText = File.ReadAllText(creditsPath).Replace("\n", Environment.NewLine);
                         }
                         else
                         {
@@ -593,21 +593,21 @@ namespace EchoEngine
                     {
                         creditsText = "Credits not found.";
                     }
-                    PrintToOutput("\n\n" + creditsText);
-                    PrintToOutput("\n\nPRESS ENTER TO CONTINUE... ");
+                    PrintToOutput(Environment.NewLine + Environment.NewLine + creditsText);
+                    PrintToOutput(Environment.NewLine + Environment.NewLine + "PRESS ENTER TO CONTINUE... ");
                     GetUserInput();
                     ClearOutput();
                 }
                 else if (menuInput == 5)
                 {
                     Reset();
-                    PrintToOutput("\n\nRESET\n\n PLEASE RESTART THE PROGRAM");
+                    PrintToOutput(Environment.NewLine + Environment.NewLine + "RESET" + Environment.NewLine + Environment.NewLine + " PLEASE RESTART THE PROGRAM");
                     GetUserInput();
                     Application.Exit();
                 }
                 else
                 {
-                    PrintToOutput("\n\nTHAT IS NOT A VAILD INPUT");
+                    PrintToOutput(Environment.NewLine + Environment.NewLine + "THAT IS NOT A VAILD INPUT");
                     Thread.Sleep(2000);
                     ClearOutput();
                 }
@@ -625,14 +625,14 @@ namespace EchoEngine
             try
             {
                 string filePath = Path.Combine("Text", "Stories", "Prolog", "Prolog.txt");
-                displayText = File.ReadAllText(filePath);
+                displayText = File.ReadAllText(filePath).Replace("\n", Environment.NewLine);
             }
             catch
             {
                 displayText = "Prolog not found.";
             }
-            PrintToOutput("\n\n" + displayText, 10);
-            PrintToOutput("\n\nPRESS ENTER TO CONTINUE... ");
+            PrintToOutput(Environment.NewLine + Environment.NewLine + displayText, 10);
+            PrintToOutput(Environment.NewLine + Environment.NewLine + "PRESS ENTER TO CONTINUE... ");
             GetUserInput();
             ClearOutput();
             Tutorial(1, 1, scanner);
@@ -642,8 +642,8 @@ namespace EchoEngine
         {
             int x = inputX;
             int y = inputY;
-            string optionsText = "\n\n INPUT >> ";
-            string helpText = "\n\nAVALABLE COMMANDS:\n north\n south\n east\n west\n up\n down\n inventory\n search\n use\n menu";
+            string optionsText = Environment.NewLine + Environment.NewLine + " INPUT >> ";
+            string helpText = Environment.NewLine + Environment.NewLine + "AVALABLE COMMANDS:" + Environment.NewLine + " north" + Environment.NewLine + " south" + Environment.NewLine + " east" + Environment.NewLine + " west" + Environment.NewLine + " up" + Environment.NewLine + " down" + Environment.NewLine + " inventory" + Environment.NewLine + " search" + Environment.NewLine + " use" + Environment.NewLine + " menu";
             string description = " ";
             string exits = " ";
             string items = " ";
@@ -671,7 +671,7 @@ namespace EchoEngine
                     string descPath = Path.Combine("Text", "Room_descriptions", "Tutorial", "y" + y + "_x" + x, "Description.txt");
                     if (File.Exists(descPath))
                     {
-                        description = File.ReadAllText(descPath);
+                        description = File.ReadAllText(descPath).Replace("\n", Environment.NewLine);
                     }
                     else
                     {
@@ -704,7 +704,7 @@ namespace EchoEngine
                 //display data
                 if (!firstLoop) ClearOutput();
                 PrintToOutput(description, 10);
-                PrintToOutput("\n\n Possible Exits: " + exits);
+                PrintToOutput(Environment.NewLine + Environment.NewLine + " Possible Exits: " + exits);
                 PrintToOutput(helpText);
                 PrintToOutput(optionsText);
                 firstLoop = false;
@@ -725,7 +725,7 @@ namespace EchoEngine
                 }
                 else if (input == "up" || input == "down")
                 {
-                    PrintToOutput("\n\nYou can't go that way.");
+                    PrintToOutput(Environment.NewLine + Environment.NewLine + "You can't go that way.");
                 }
                 else if (input == "inventory")
                 {
@@ -762,7 +762,7 @@ namespace EchoEngine
                 }
                 else if (input == "menu")
                 {
-                    PrintToOutput("\n\nReturning to main menu...");
+                    PrintToOutput(Environment.NewLine + Environment.NewLine + "Returning to main menu...");
                     // Read the title from the text file
                     string winTitle = "";
                     try
@@ -788,10 +788,10 @@ namespace EchoEngine
                 }
                 else
                 {
-                    PrintToOutput("\n\n THAT IS NOT A VALID INPUT");
+                    PrintToOutput(Environment.NewLine + Environment.NewLine + " THAT IS NOT A VALID INPUT");
                 }
 
-                PrintToOutput("\n\nPRESS ENTER TO CONTINUE... ");
+                PrintToOutput(Environment.NewLine + Environment.NewLine + "PRESS ENTER TO CONTINUE... ");
                 if (scanner == null)
                 {
                     GetUserInput();
@@ -813,14 +813,14 @@ namespace EchoEngine
             try
             {
                 string filePath = Path.Combine("Text", "Stories", "Tutorial", "Tutorial_completed.txt");
-                desc = File.ReadAllText(filePath);
+                desc = File.ReadAllText(filePath).Replace("\n", Environment.NewLine);
             }
             catch
             {
                 desc = "Leaving the cabin text not found.";
             }
             PrintToOutput(desc);
-            PrintToOutput("\n\nPRESS ENTER TO CONTINUE... ");
+            PrintToOutput(Environment.NewLine + Environment.NewLine + "PRESS ENTER TO CONTINUE... ");
             if (scanner == null)
             {
                 GetUserInput();
@@ -857,8 +857,8 @@ namespace EchoEngine
             int x = inputX;
             int y = inputY;
             int z = inputZ;
-            string optionsText = "\n\n INPUT >> ";
-            string helpText = "\n\nAVALABLE COMMANDS:\n north\n south\n east\n west\n up\n down\n inventory\n search\n use\n menu";
+            string optionsText = Environment.NewLine + Environment.NewLine + " INPUT >> ";
+            string helpText = Environment.NewLine + Environment.NewLine + "AVALABLE COMMANDS:" + Environment.NewLine + " north" + Environment.NewLine + " south" + Environment.NewLine + " east" + Environment.NewLine + " west" + Environment.NewLine + " up" + Environment.NewLine + " down" + Environment.NewLine + " inventory" + Environment.NewLine + " search" + Environment.NewLine + " use" + Environment.NewLine + " menu";
             string description = " ";
             string exits = " ";
             string items = " ";
@@ -898,7 +898,7 @@ namespace EchoEngine
                 try
                 {
                     string descPath = Path.Combine("Text", "Room_descriptions", "Main", "floor_" + z, "y" + y + "_x" + x, "Description.txt");
-                    description = File.ReadAllText(descPath);
+                    description = File.ReadAllText(descPath).Replace("\n", Environment.NewLine);
                 }
                 catch
                 {
@@ -920,7 +920,7 @@ namespace EchoEngine
                 try
                 {
                     string hauntPath = Path.Combine("Text", "Room_descriptions", "Main", "floor_" + z, "y" + y + "_x" + x, "Strange_occerance.txt");
-                    haunting = File.ReadAllText(hauntPath);
+                    haunting = File.ReadAllText(hauntPath).Replace("\n", Environment.NewLine);
                 }
                 catch
                 {
@@ -933,12 +933,12 @@ namespace EchoEngine
                 {
                     PrintToOutput("#");
                 }
-                PrintToOutput("\n\n");
+                PrintToOutput(Environment.NewLine + Environment.NewLine);
                 PrintToOutput(description, 10);
                 if (toHaunt == 1)
                 {
-                    PrintToOutput("\n\n" + haunting);
-                    PrintToOutput("\n\nYour health has decreased");
+                    PrintToOutput(Environment.NewLine + Environment.NewLine + haunting);
+                    PrintToOutput(Environment.NewLine + Environment.NewLine + "Your health has decreased");
                     if (sanity > 0)
                     {
                         sanity--;
@@ -954,7 +954,7 @@ namespace EchoEngine
                 }
                 if (sanity == 0)
                 {
-                    PrintToOutput("\n\nPRESS ENTER TO CONTINUE... ");
+                    PrintToOutput(Environment.NewLine + Environment.NewLine + "PRESS ENTER TO CONTINUE... ");
                     if (scanner == null)
                     {
                         GetUserInput();
@@ -965,7 +965,7 @@ namespace EchoEngine
                     }
                     GameOver();
                 }
-                PrintToOutput("\n\n Possible Exits: " + exits);
+                PrintToOutput(Environment.NewLine + Environment.NewLine + " Possible Exits: " + exits);
                 PrintToOutput(helpText);
                 PrintToOutput(optionsText);
                 if (scanner == null)
@@ -1020,7 +1020,7 @@ namespace EchoEngine
                 }
                 else if (input == "menu")
                 {
-                    PrintToOutput("\n\nReturning to main menu...");
+                    PrintToOutput(Environment.NewLine + Environment.NewLine + "Returning to main menu...");
                     // Read the title from the text file
                     string winTitle = "";
                     try
@@ -1046,10 +1046,10 @@ namespace EchoEngine
                 }
                 else
                 {
-                    PrintToOutput("\n\n THAT IS NOT A VALID INPUT");
+                    PrintToOutput(Environment.NewLine + Environment.NewLine + " THAT IS NOT A VALID INPUT");
                 }
 
-                PrintToOutput("\n\nPRESS ENTER TO CONTINUE... ");
+                PrintToOutput(Environment.NewLine + Environment.NewLine + "PRESS ENTER TO CONTINUE... ");
                 if (scanner == null)
                 {
                     GetUserInput();
@@ -1106,7 +1106,7 @@ namespace EchoEngine
             }
             else
             {
-                PrintToOutput("\n\nYou can't go that way.");
+                PrintToOutput(Environment.NewLine + Environment.NewLine + "You can't go that way.");
             }
 
             if (location == "cabin")
@@ -1148,11 +1148,11 @@ namespace EchoEngine
 
             if (inventoryItems.Count == 0)
             {
-                return "\n\nYour inventory is empty";
+                return Environment.NewLine + Environment.NewLine + "Your inventory is empty";
             }
             else
             {
-                return "\nYour inventory:\n" + string.Join("\n", inventoryItems);
+                return Environment.NewLine + "Your inventory:" + Environment.NewLine + string.Join(Environment.NewLine, inventoryItems);
             }
         }
 
@@ -1213,9 +1213,9 @@ namespace EchoEngine
                     try
                     {
                         string invPath = Path.Combine("Save", "Inventory.txt");
-                        File.AppendAllText(invPath, item + "\n");
+                        File.AppendAllText(invPath, item + Environment.NewLine);
                         string histPath = Path.Combine("Save", "Inventory_history.txt");
-                        File.AppendAllText(histPath, item + "\n");
+                        File.AppendAllText(histPath, item + Environment.NewLine);
                         itemsFound.Add(item);
                     }
                     catch (Exception ex)
@@ -1235,11 +1235,11 @@ namespace EchoEngine
 
             if (itemsFound.Count == 0)
             {
-                return "\n\nYou found nothing";
+                return Environment.NewLine + Environment.NewLine + "You found nothing";
             }
             else
             {
-                return "\n\nYou found:\n" + string.Join("\n", itemsFound);
+                return Environment.NewLine + Environment.NewLine + "You found:" + Environment.NewLine + string.Join(Environment.NewLine, itemsFound);
             }
         }
 
@@ -1334,7 +1334,7 @@ namespace EchoEngine
                 }
                 else
                 {
-                    return "\n\nYou don't have all usable items for this room";
+                    return Environment.NewLine + Environment.NewLine + "You don't have all usable items for this room";
                 }
             }
             else
@@ -1345,12 +1345,12 @@ namespace EchoEngine
                     string usablePath = Path.Combine("Text", "Room_descriptions", "Main", "floor_" + z, "y" + y + "_x" + x, "Usable_Items.txt");
                     if (!File.Exists(usablePath))
                     {
-                        return "\n\nYou have no usable items for this room";
+                        return Environment.NewLine + Environment.NewLine + "You have no usable items for this room";
                     }
                     string[] lines = File.ReadAllLines(usablePath);
                     if (lines.Length == 0)
                     {
-                        return "\n\nYou have no usable items for this room";
+                        return Environment.NewLine + Environment.NewLine + "You have no usable items for this room";
                     }
                     string[] usableItems = lines[0].Split(',');
                     string itemDescription = lines.Length > 1 ? lines[1] : "";
@@ -1378,13 +1378,13 @@ namespace EchoEngine
                         File.WriteAllLines(invPath, inventoryItems);
 
                         // Add the new item to the inventory and inventory history
-                        File.AppendAllText(invPath, newItem + "\n");
+                        File.AppendAllText(invPath, newItem + Environment.NewLine);
 
                         string histPath = Path.Combine("Save", "Inventory_history.txt");
-                        File.AppendAllText(histPath, newItem + "\n");
+                        File.AppendAllText(histPath, newItem + Environment.NewLine);
 
                         // Return the result
-                        result = "Used " + string.Join(", ", usableItems) + ".\n\n " + itemDescription + "\n\nYou found:\n" + newItem;
+                        result = "Used " + string.Join(", ", usableItems) + "." + Environment.NewLine + Environment.NewLine + " " + itemDescription + Environment.NewLine + Environment.NewLine + "You found:" + Environment.NewLine + newItem;
                     }
                     else
                     {
@@ -1459,16 +1459,16 @@ namespace EchoEngine
             try
             {
                 string filePath = Path.Combine("Text", "Stories", "Ending", "Game_over.txt");
-                description = File.ReadAllText(filePath);
+                description = File.ReadAllText(filePath).Replace("\n", Environment.NewLine);
             }
             catch
             {
                 description = "Game over text not found.";
             }
             PrintToOutput(description);
-            PrintToOutput("\n\n\n" + gameOverText);
+            PrintToOutput(Environment.NewLine + Environment.NewLine + Environment.NewLine + gameOverText);
             Reset();
-            PrintToOutput("\n\nPress ENTER to exit...");
+            PrintToOutput(Environment.NewLine + Environment.NewLine + "Press ENTER to exit...");
             GetUserInput();
             Application.Exit();
         }
@@ -1482,16 +1482,16 @@ namespace EchoEngine
             try
             {
                 string filePath = Path.Combine("Text", "Stories", "Ending", "win.txt");
-                description = File.ReadAllText(filePath);
+                description = File.ReadAllText(filePath).Replace("\n", Environment.NewLine);
             }
             catch
             {
                 description = "Win text not found.";
             }
             PrintToOutput(description);
-            PrintToOutput("\n\n\n" + winText);
+            PrintToOutput(Environment.NewLine + Environment.NewLine + Environment.NewLine + winText);
             Reset();
-            PrintToOutput("\n\nPress ENTER to exit...");
+            PrintToOutput(Environment.NewLine + Environment.NewLine + "Press ENTER to exit...");
             GetUserInput();
             Application.Exit();
         }
@@ -1580,6 +1580,7 @@ namespace EchoEngine
         [STAThread]
         static void Main()
         {
+            Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());
