@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\Projects\\Programming\\Echo Engine\\Engine_base\\Engine_base.csproj",
+      "projectUniqueName": "C:\\Users\\jackp\\Github Repositories\\EchoEngine\\Engine_base\\Engine_base.csproj",
       "projectName": "Engine_base",
-      "projectPath": "E:\\Projects\\Programming\\Echo Engine\\Engine_base\\Engine_base.csproj",
+      "projectPath": "C:\\Users\\jackp\\Github Repositories\\EchoEngine\\Engine_base\\Engine_base.csproj",
       "packagesPath": "C:\\Users\\jackp\\.nuget\\packages\\",
-      "outputPath": "E:\\Projects\\Programming\\Echo Engine\\Engine_base\\obj\\",
+      "outputPath": "C:\\Users\\jackp\\Github Repositories\\EchoEngine\\Engine_base\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\jackp\\AppData\\Roaming\\NuGet\\NuGet.Config"
