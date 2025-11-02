@@ -311,7 +311,9 @@ namespace EchoEngine
             this.Shown += (s, e) =>
             {
                 outputArea.Focus();
-                new Thread(() => ShowLogoAndStart(windowTitle)).Start();
+                Thread logoThread = new Thread(() => ShowLogoAndStart(windowTitle));
+                logoThread.IsBackground = true;
+                logoThread.Start();
             };
         }
 
@@ -421,7 +423,9 @@ namespace EchoEngine
                 outputArea.Font = originalFont;
             });
 
-            new Thread(() => RunGame(windowTitle)).Start();
+            Thread gameThread = new Thread(() => RunGame(windowTitle));
+            gameThread.IsBackground = true;
+            gameThread.Start();
         }
 
         // Wait for user input from the GUI
