@@ -1,6 +1,6 @@
 # Jack Murray
 # Nova Foundry / Echo Hub
-# v1.0.4
+# v1.1.0
 
 import os
 import sys
@@ -11,6 +11,8 @@ import subprocess
 import customtkinter as ctk
 from tkinter import filedialog
 from PIL import Image
+import urllib.request
+import json
 
 # ---------- CONFIG ----------
 IMPORT_DESTINATION = r"Working_game"
@@ -18,6 +20,8 @@ EXPORT_SOURCE = r"Working_game"
 DEFAULT_WIDTH = 600
 DEFAULT_HEIGHT = 640   # taller window to fit new button
 PROGRESS_AREA_HEIGHT = 70
+VERSION = "2.1"
+GITURL = "https://github.com/DirectedHunt42/EchoEngine"
 
 # ---------- Helper Functions ----------
 def show_custom_message(title, message, is_error=False):
@@ -75,6 +79,9 @@ def load_resized_image(path, max_size=64):
             print(f"Could not load image: {e}")
     return None
 
+def version_tuple(v):
+    return tuple(map(int, v.split('.')))
+
 # ---------- Progress Bar Logic ----------
 def show_progress_indicators():
     new_height = DEFAULT_HEIGHT + PROGRESS_AREA_HEIGHT
@@ -94,18 +101,19 @@ def hide_progress_indicators():
     app.geometry(f"{DEFAULT_WIDTH}x{DEFAULT_HEIGHT}")
     app.minsize(DEFAULT_WIDTH, DEFAULT_HEIGHT)
 
-def update_progress_indicators(current, total, progress):
-    progress_bar.set(progress)
-    file_status_label.configure(text=f"File {current} of {total}")
-    app.update_idletasks()
-
 def run_with_progress(task_name, actions):
     def task():
         total_files = len(actions)
-        for i, action in enumerate(actions, start=1):
+        for i, item in enumerate(actions, start=1):
+            if isinstance(item, tuple):
+                action, desc = item
+            else:
+                action = item
+                desc = "Processing"
+            app.after(0, lambda d=desc, c=i, t=total_files: file_status_label.configure(text=f"{d} ({c}/{t})"))
             action()
             progress = i / total_files if total_files else 1
-            app.after(0, lambda c=i, t=total_files, p=progress: update_progress_indicators(c, t, p))
+            app.after(0, lambda p=progress: progress_bar.set(p))
         app.after(0, task_done)
     def task_done():
         hide_progress_indicators()
@@ -119,6 +127,17 @@ def run_with_progress(task_name, actions):
     threading.Thread(target=task, daemon=True).start()
 
 # ---------- Folder Utilities ----------
+def get_clear_actions(folder_path):
+    actions = []
+    for root, dirs, files in os.walk(folder_path, topdown=False):
+        for filename in files:
+            file_path = os.path.join(root, filename)
+            actions.append((lambda p=file_path: os.unlink(p), f"Deleting {os.path.relpath(file_path, folder_path)}"))
+        for dir_name in dirs:
+            dir_path = os.path.join(root, dir_name)
+            actions.append((lambda p=dir_path: os.rmdir(p), f"Removing directory {os.path.relpath(dir_path, folder_path)}"))
+    return actions
+
 def clear_folder(folder_path):
     if not os.path.exists(folder_path):
         show_custom_message("Info", f"'{folder_path}' does not exist.")
@@ -126,31 +145,36 @@ def clear_folder(folder_path):
     if not ask_confirmation("Confirm Deletion",
                             f"The contents of '{folder_path}' will be permanently deleted.\nProceed?"):
         return
-    for filename in os.listdir(folder_path):
-        file_path = os.path.join(folder_path, filename)
-        try:
-            if os.path.isfile(file_path) or os.path.islink(file_path):
-                os.unlink(file_path)
-            elif os.path.isdir(file_path):
-                shutil.rmtree(file_path)
-        except Exception as e:
-            print(f"Failed to delete {file_path}. Reason: {e}")
+    actions = get_clear_actions(folder_path)
+    if actions:
+        run_with_progress("Clearing working directory", actions)
+    else:
+        show_custom_message("Info", "Directory is already empty.")
 
 def copy_folder_with_progress(src, dest):
+    actions = []
     if os.path.exists(dest):
         if not ask_confirmation("Overwrite Project",
                                 f"The working directory '{dest}' contains project files.\nOverwrite its contents?"):
             return []
-        clear_folder(dest)
-    os.makedirs(dest, exist_ok=True)
-    actions = []
-    for item in os.listdir(src):
-        s = os.path.join(src, item)
-        d = os.path.join(dest, item)
-        if os.path.isdir(s):
-            actions.append(lambda s=s, d=d: shutil.copytree(s, d, dirs_exist_ok=True))
-        else:
-            actions.append(lambda s=s, d=d: shutil.copy2(s, d))
+        actions.extend(get_clear_actions(dest))
+    # Collect directory creation actions
+    for root, dirs, _ in os.walk(src):
+        rel_root = os.path.relpath(root, src)
+        dest_root = os.path.join(dest, rel_root)
+        for dir_name in dirs:
+            dir_path = os.path.join(dest_root, dir_name)
+            rel_dir = os.path.join(rel_root, dir_name)
+            actions.append((lambda p=dir_path: os.makedirs(p, exist_ok=True), f"Creating directory {rel_dir}"))
+    # Collect file copy actions
+    for root, _, files in os.walk(src):
+        rel_root = os.path.relpath(root, src)
+        dest_root = os.path.join(dest, rel_root)
+        for filename in files:
+            src_path = os.path.join(root, filename)
+            dest_path = os.path.join(dest_root, filename)
+            rel_path = os.path.join(rel_root, filename)
+            actions.append((lambda s=src_path, d=dest_path: shutil.copy2(s, d), f"Copying {rel_path}"))
     return actions
 
 # ---------- Main Actions ----------
@@ -168,25 +192,43 @@ def import_zip():
     zip_path = filedialog.askopenfilename(filetypes=[("Echo Project", "*.echo")])
     if not zip_path:
         return
-    import_project_from_path(zip_path)
+    import_project(zip_path)
 
-def import_project_from_path(zip_path):
+def import_project(zip_path):
     if os.path.exists(IMPORT_DESTINATION):
         if not ask_confirmation("Overwrite Project",
                                 f"The working directory '{IMPORT_DESTINATION}' contains project files.\nOverwrite its contents?"):
             return
-        clear_folder(IMPORT_DESTINATION)
-    os.makedirs(IMPORT_DESTINATION, exist_ok=True)
-    try:
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            file_list = [info for info in zip_ref.infolist() if not info.is_dir()]
-            actions = [lambda info=info, z=zip_ref: z.extract(info.filename, IMPORT_DESTINATION) for info in file_list]
-            if actions:
-                run_with_progress("Importing project", actions)
-            else:
-                show_custom_message("Success", "Project imported successfully!")
-    except Exception as e:
-        show_custom_message("Error", str(e), is_error=True)
+    for btn in (copy_btn, import_btn, export_btn, open_btn, clear_btn):
+        btn.configure(state='disabled')
+    status_label.configure(text="Importing project...")
+    show_progress_indicators()
+    def task_done(success=True, message="Project imported successfully!"):
+        hide_progress_indicators()
+        for btn in (copy_btn, import_btn, export_btn, open_btn, clear_btn):
+            btn.configure(state='normal')
+        if success:
+            show_custom_message("Success", message)
+        else:
+            show_custom_message("Error", message, is_error=True)
+    def import_task():
+        try:
+            os.makedirs(IMPORT_DESTINATION, exist_ok=True)
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                file_list = [info for info in zip_ref.infolist() if not info.is_dir()]
+                total_files = len(file_list)
+                if not total_files:
+                    app.after(0, task_done, True, "Empty project")
+                    return
+                for i, info in enumerate(file_list, start=1):
+                    app.after(0, lambda f=info.filename, c=i, t=total_files: file_status_label.configure(text=f"Extracting {f} ({c}/{t})"))
+                    zip_ref.extract(info, IMPORT_DESTINATION)
+                    progress = i / total_files
+                    app.after(0, lambda p=progress: progress_bar.set(p))
+            app.after(0, task_done)
+        except Exception as e:
+            app.after(0, task_done, False, str(e))
+    threading.Thread(target=import_task, daemon=True).start()
 
 def export_zip():
     zip_path = filedialog.asksaveasfilename(defaultextension=".echo",
@@ -213,15 +255,16 @@ def export_zip():
                     full_path = os.path.join(root, file)
                     arcname = os.path.relpath(full_path, EXPORT_SOURCE)
                     file_paths.append((full_path, arcname))
-            if not file_paths:
+            total_files = len(file_paths)
+            if not total_files:
                 app.after(0, task_done, True, "No project found")
                 return
-            total_files = len(file_paths)
             with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zip_ref:
                 for i, (full_path, arcname) in enumerate(file_paths, start=1):
+                    app.after(0, lambda a=arcname, c=i, t=total_files: file_status_label.configure(text=f"Adding {a} ({c}/{t})"))
                     zip_ref.write(full_path, arcname)
                     progress = i / total_files
-                    app.after(0, lambda c=i, t=total_files, p=progress: update_progress_indicators(c, t, p))
+                    app.after(0, lambda p=progress: progress_bar.set(p))
             app.after(0, task_done)
         except Exception as e:
             app.after(0, task_done, False, str(e))
@@ -234,12 +277,79 @@ def open_project():
     except Exception as e:
         show_custom_message("Error", str(e), is_error=True)
 
+# ---------- Auto Update ----------
+def check_for_update():
+    def check_task():
+        try:
+            url = "https://api.github.com/repos/DirectedHunt42/EchoEngine/releases/latest"
+            req = urllib.request.Request(url, headers={'User-Agent': 'EchoHub', 'Accept': 'application/vnd.github.v3+json'})
+            with urllib.request.urlopen(req) as response:
+                data = json.loads(response.read().decode('utf-8'))
+            app.after(0, lambda d=data: do_update_confirm(d))
+        except:
+            pass
+    threading.Thread(target=check_task, daemon=True).start()
+
+def do_update_confirm(data):
+    try:
+        title = data.get('name', '')
+        if title.startswith("Release "):
+            new_ver = title[len("Release "):].strip()
+        else:
+            return
+        current_ver = VERSION
+        current_t = version_tuple(current_ver)
+        new_t = version_tuple(new_ver)
+        if new_t > current_t:
+            if ask_confirmation("Update Available", f"New version {new_ver} available (current {current_ver}).\nDownload and install?"):
+                download_and_install(data)
+    except:
+        pass
+
+def download_and_install(data):
+    assets = data.get('assets', [])
+    download_url = None
+    for asset in assets:
+        if asset['name'] == "Echo_Editor_Setup.exe":
+            download_url = asset['browser_download_url']
+            break
+    if not download_url:
+        show_custom_message("Error", "Update file not found.", is_error=True)
+        return
+    setup_file = os.path.join(os.path.dirname(sys.argv[0]), "Echo_Editor_Setup.exe")
+    for btn in (copy_btn, import_btn, export_btn, open_btn, clear_btn):
+        btn.configure(state='disabled')
+    status_label.configure(text="Downloading update...")
+    show_progress_indicators()
+    def download_task():
+        try:
+            def reporthook(count, block_size, total_size):
+                if total_size <= 0:
+                    app.after(0, file_status_label.configure(text="Downloading..."))
+                    return
+                progress = min(1.0, float(count * block_size) / total_size)
+                mb_done = (count * block_size) / (1024 ** 2)
+                mb_total = total_size / (1024 ** 2)
+                app.after(0, file_status_label.configure(text=f"Downloading ({mb_done:.2f}/{mb_total:.2f} MB)"))
+                app.after(0, lambda p=progress: progress_bar.set(p))
+            urllib.request.urlretrieve(download_url, setup_file, reporthook)
+            app.after(0, hide_progress_indicators)
+            app.after(0, lambda: show_custom_message("Update Ready", "Update downloaded. Installing..."))
+            subprocess.Popen([setup_file])
+            app.after(100, app.destroy)
+        except Exception as e:
+            app.after(0, hide_progress_indicators)
+            app.after(0, lambda: show_custom_message("Error", str(e), is_error=True))
+            for btn in (copy_btn, import_btn, export_btn, open_btn, clear_btn):
+                btn.configure(state='normal')
+    threading.Thread(target=download_task, daemon=True).start()
+
 # ---------- Startup File Handling ----------
 def check_startup_file():
     if len(sys.argv) > 1:
         file_path = sys.argv[1]
         if file_path.lower().endswith(".echo") and os.path.exists(file_path):
-            import_project_from_path(file_path)
+            import_project(file_path)
 
 # ---------- App Setup ----------
 ctk.set_appearance_mode("dark")
@@ -312,9 +422,10 @@ if logo_ctk:
     logo_label = ctk.CTkLabel(frame, image=logo_ctk, text="")
     logo_label.pack(pady=10)
 
-ctk.CTkLabel(frame, text="v1.0.4", font=("Segoe UI", 10), text_color="gray").pack(pady=(0, 10))
+ctk.CTkLabel(frame, text="v1.1.0", font=("Segoe UI", 10), text_color="gray").pack(pady=(0, 10))
 
 # ---------- Start ----------
 hide_progress_indicators()
+check_for_update()
 check_startup_file()
 app.mainloop()
