@@ -1,0 +1,5 @@
+E:\Projects\Programming\Echo Engine\Engine_base\Release\Engine_base.exe
+E:\Projects\Programming\Echo Engine\Engine_base\Release\Engine_base.dll
+E:\Projects\Programming\Echo Engine\Engine_base\Release\Engine_base.deps.json
+E:\Projects\Programming\Echo Engine\Engine_base\Release\Engine_base.runtimeconfig.json
+E:\Projects\Programming\Echo Engine\Engine_base\Release\Engine_base.pdb
