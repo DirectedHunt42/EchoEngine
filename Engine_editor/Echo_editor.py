@@ -250,6 +250,7 @@ def setup_main_ui():
     inputs["Title Font"] = add_input(scroll_frame,"Title Font:",file_picker=True,font_only=True,tooltip_text="Choose .ttf font for titles",accepted_ext=[".ttf"])
     inputs["Icon"] = add_input(scroll_frame,"Icon:",file_picker=True,tooltip_text="Game icon",accepted_ext=[".png",".jpg",".jpeg",".ico"])
     inputs["Music"] = add_input(scroll_frame,"Music:",file_picker=True,tooltip_text="Background music",accepted_ext=[".mp3",".wav",".ogg"])
+    inputs["Credits"] = add_text_with_path(scroll_frame, "Credits:", tooltip_text="Credits text shown at the end of the game")
     add_section(scroll_frame,"Text")
     inputs["Prolog Text"] = add_text_with_path(scroll_frame,"Prolog Text:",tooltip_text="Text shown at the beginning of the game - Select either file path or type into textbox")
     inputs["Cutscene Text"] = add_text_with_path(scroll_frame,"Cutscene Text:",tooltip_text="Text for transitioning from tutorial to gameplay - Select either file path or type into textbox")
@@ -277,7 +278,8 @@ def setup_main_ui():
         "Win Text": r"../Working_game/Text/Stories/Ending/Win.txt",
         "Win Location": r"../Working_game/Finishing/Required_room.txt",
         "Win Items": r"../Working_game/Finishing/Required_items.txt",
-        "Tutorial Items": r"../Working_game/Tutorial/Required_items.txt"
+        "Tutorial Items": r"../Working_game/Tutorial/Required_items.txt",
+        "Credits": r"../Working_game/Text/Misc/Credits.txt"
     }
     accepted_extensions = {
         "Font": [".ttf"],
