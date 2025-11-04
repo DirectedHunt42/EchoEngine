@@ -1,6 +1,6 @@
 # Jack Murray
 # Nova Foundry / Echo Hub
-# v1.1.0
+# v1.1.1
 
 import os
 import sys
@@ -18,9 +18,9 @@ import json
 IMPORT_DESTINATION = r"Working_game"
 EXPORT_SOURCE = r"Working_game"
 DEFAULT_WIDTH = 600
-DEFAULT_HEIGHT = 640   # taller window to fit new button
+DEFAULT_HEIGHT = 680   # increased height to fit title
 PROGRESS_AREA_HEIGHT = 70
-VERSION = "2.1"
+VERSION = "2.2"
 GITURL = "https://github.com/DirectedHunt42/EchoEngine"
 
 # ---------- Helper Functions ----------
@@ -82,6 +82,26 @@ def load_resized_image(path, max_size=64):
 def version_tuple(v):
     return tuple(map(int, v.split('.')))
 
+def get_game_title():
+    title_path = os.path.join(IMPORT_DESTINATION, "Text", "Misc", "Title.txt")
+    try:
+        if os.path.exists(title_path):
+            with open(title_path, 'r', encoding='utf-8') as f:
+                title = f.read().strip()
+                if title:  # If title is not empty
+                    return title
+                return "Untitled Project"
+    except Exception:
+        pass
+    return "No Project Loaded"
+
+def close_engine_processes():
+    try:
+        subprocess.run(['taskkill', '/F', '/IM', 'Engine_base.exe'], 
+                      capture_output=True, check=False)
+    except Exception:
+        pass
+
 # ---------- Progress Bar Logic ----------
 def show_progress_indicators():
     new_height = DEFAULT_HEIGHT + PROGRESS_AREA_HEIGHT
@@ -119,6 +139,7 @@ def run_with_progress(task_name, actions):
         hide_progress_indicators()
         for btn in (copy_btn, import_btn, export_btn, open_btn, clear_btn):
             btn.configure(state='normal')
+        update_project_title()
         show_custom_message("Success", f"{task_name} completed successfully!")
     for btn in (copy_btn, import_btn, export_btn, open_btn, clear_btn):
         btn.configure(state='disabled')
@@ -145,6 +166,7 @@ def clear_folder(folder_path):
     if not ask_confirmation("Confirm Deletion",
                             f"The contents of '{folder_path}' will be permanently deleted.\nProceed?"):
         return
+    close_engine_processes()
     actions = get_clear_actions(folder_path)
     if actions:
         run_with_progress("Clearing working directory", actions)
@@ -199,6 +221,7 @@ def import_project(zip_path):
         if not ask_confirmation("Overwrite Project",
                                 f"The working directory '{IMPORT_DESTINATION}' contains project files.\nOverwrite its contents?"):
             return
+    close_engine_processes()
     for btn in (copy_btn, import_btn, export_btn, open_btn, clear_btn):
         btn.configure(state='disabled')
     status_label.configure(text="Importing project...")
@@ -208,6 +231,7 @@ def import_project(zip_path):
         for btn in (copy_btn, import_btn, export_btn, open_btn, clear_btn):
             btn.configure(state='normal')
         if success:
+            update_project_title()
             show_custom_message("Success", message)
         else:
             show_custom_message("Error", message, is_error=True)
@@ -383,7 +407,12 @@ icon_ctk = load_resized_image(icon_path)
 if icon_ctk:
     ctk.CTkLabel(frame, image=icon_ctk, text="").pack(pady=(10, 5))
 
-ctk.CTkLabel(frame, text="Echo Hub", font=("Segoe UI", 20, "bold")).pack(pady=(5, 20))
+ctk.CTkLabel(frame, text="Echo Hub", font=("Segoe UI", 20, "bold")).pack(pady=(5, 5))
+project_title_label = ctk.CTkLabel(frame, text=get_game_title(), font=("Segoe UI", 14), text_color="#90caf9")  # Light blue color
+project_title_label.pack(pady=(0, 20))
+
+def update_project_title():
+    project_title_label.configure(text=get_game_title())
 
 btn_width, btn_height = 250, 40
 btn_color = ("#666666", "#555555")
@@ -422,7 +451,7 @@ if logo_ctk:
     logo_label = ctk.CTkLabel(frame, image=logo_ctk, text="")
     logo_label.pack(pady=10)
 
-ctk.CTkLabel(frame, text="v1.1.0", font=("Segoe UI", 10), text_color="gray").pack(pady=(0, 10))
+ctk.CTkLabel(frame, text="v1.1.1", font=("Segoe UI", 10), text_color="gray").pack(pady=(0, 10))
 
 # ---------- Start ----------
 hide_progress_indicators()
