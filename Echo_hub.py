@@ -1,6 +1,6 @@
 # Jack Murray
 # Nova Foundry / Echo Hub
-# v1.1.1
+# v1.1.2
 
 import os
 import sys
@@ -455,7 +455,7 @@ if logo_ctk:
     logo_label = ctk.CTkLabel(frame, image=logo_ctk, text="")
     logo_label.pack(pady=10)
 
-ctk.CTkLabel(frame, text="v1.1.1", font=("Segoe UI", 10), text_color="gray").pack(pady=(0, 10))
+ctk.CTkLabel(frame, text="v1.1.2", font=("Segoe UI", 10), text_color="gray").pack(pady=(0, 10))
 
 # ---------- Start ----------
 hide_progress_indicators()
