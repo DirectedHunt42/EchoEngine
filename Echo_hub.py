@@ -373,7 +373,10 @@ def check_startup_file():
     if len(sys.argv) > 1:
         file_path = sys.argv[1]
         if file_path.lower().endswith(".echo") and os.path.exists(file_path):
-            import_project(file_path)
+            # Use the same UI logic as the import button
+            def do_import():
+                import_project(file_path)
+            app.after(100, do_import)
 
 # ---------- App Setup ----------
 ctk.set_appearance_mode("dark")
