@@ -96,11 +96,12 @@ def get_game_title():
     return "No Project Loaded"
 
 def close_engine_processes():
-    try:
-        subprocess.run(['taskkill', '/F', '/IM', 'Engine_base.exe'], 
-                      capture_output=True, check=False)
-    except Exception:
-        pass
+    while subprocess.run(['tasklist'], capture_output=True, text=True).stdout.find('Engine_base.exe') != -1:
+        try:
+            subprocess.run(['taskkill', '/F', '/IM', 'Engine_base.exe'], 
+                        capture_output=True, check=False)
+        except Exception:
+            pass
 
 # ---------- Progress Bar Logic ----------
 def show_progress_indicators():
