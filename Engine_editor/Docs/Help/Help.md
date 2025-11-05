@@ -1,9 +1,11 @@
 # Echo Editor User Guide
 
-## Version 1.1.0
+## Version 1.2.0
+
 Welcome to the **Echo Editor**, a graphical user interface (GUI) tool designed to simplify the configuration and setup of your Echo Engine games. Echo Editor allows you to define game metadata (like titles, fonts, and icons), configure narrative elements (such as prolog, cutscenes, and endings), and set core gameplay parameters (health, damage, win conditions) without manually editing text files or code. It handles validation, file copying/conversions, and automatic saving to the appropriate directories in your Echo Engine project structure.
 
 This guide provides a comprehensive walkthrough, including:
+
 - What each field expects as input.
 - How to use interactive elements like file pickers, checkboxes, and textboxes.
 - Best practices for saving and loading data.
@@ -17,10 +19,12 @@ This guide provides a comprehensive walkthrough, including:
 ## System Requirements
 
 ### Hardware
+
 - Minimum: 1024x768 resolution (app starts maximized).
 - Recommended: Any modern setup for smooth UI rendering.
 
 ### Operating System
+
 - Windows
 
 ---
@@ -51,9 +55,10 @@ This guide provides a comprehensive walkthrough, including:
 This tab is the heart of the editor. It's divided into scrollable sections: **Basic**, **Text**, and **General Gameplay**. Use the scrollbar on the right to navigate long forms.
 
 ### Input Types Explained
+
 - **Text Entries**: Free-form or numeric fields. Validation happens on focus-out (tab away or click elsewhere).
 - **File Pickers**: Click the 📂 button to browse files. Supported extensions are validated (e.g., .ttf for fonts).
-- **Text-or-File Widgets** (for narrative sections): 
+- **Text-or-File Widgets** (for narrative sections):
   - Checkbox for "File Path" (load from .txt) or "Text" (type directly).
   - Mutual exclusive: Selecting one unchecks the other.
   - Validation: Ensures .txt for files; non-empty for text.
@@ -61,6 +66,7 @@ This tab is the heart of the editor. It's divided into scrollable sections: **Ba
 - **Integers Only**: Fields like health auto-validate for positive digits.
 
 #### Basic Section
+
 These set foundational game assets. Files are copied/converted to `../Working_game/` subdirs.
 
 | Field          | What to Enter                  | How to Use                          | Validation/Tips                                                                 | Save Location                          |
@@ -70,14 +76,18 @@ These set foundational game assets. Files are copied/converted to `../Working_ga
 | **Title Font** | Path to font for headings/menus.| Click 📂 to pick .ttf. Optional.    | .ttf only; file must exist. Copied as-is.                                       | `../Working_game/Fonts/Title_Font.ttf` |
 | **Icon**       | Path to game icon/image.       | Click 📂 to pick .png/.jpg/.jpeg/.ico. Optional. | Converts to PNG; must be valid image.                                           | `../Working_game/Icons/Icon.png`       |
 | **Music**      | Path to background track.      | Click 📂 to pick .mp3/.wav/.ogg. Optional. | Converts MP3/OGG to WAV (requires FFmpeg if installed). .WAV copies directly.   | `../Working_game/Sounds/Background.wav`|
+|**Credits**| Credits to display| Checkbox: File (📂 for .txt) or Text (type in box).|Required; .txt or non-empty text. Encoding: UTF-8.|`../Working\_game/Text/Misc/Credits.txt`|
 
 **Usage Notes:**
+
 - Fonts: Use TrueType (.ttf) for compatibility. Test in-game for rendering issues.
 - Icon: Square images (e.g., 256x256) work best. The app resizes/previews if needed.
 - Music: Loopable tracks recommended. If conversion fails, provide .wav to avoid errors.
 
 #### Text Section
+
 Narrative content for story beats. Each uses a **text-or-file widget**:
+
 - **File Path Mode**: Pick a .txt (content copied verbatim).
 - **Text Mode**: Type multi-line text (saved directly).
 
@@ -89,12 +99,14 @@ Narrative content for story beats. Each uses a **text-or-file widget**:
 | **Win Text**      | Victory epilogue.                      | Same as above.                                                             | Required; spoiler-free if sharing.                   | `../Working_game/Text/Stories/Ending/Win.txt`      |
 
 **Usage Notes:**
+
 - **Switching Modes**: Check "File Path" or uncheck to enable Text (auto-toggles).
 - **Multi-Line**: Textbox supports Enter for new lines; preserved on save.
 - **External Editing**: Write in a text editor, then load via file picker.
 - **Loading Existing**: If file exists and has content, auto-loads into Text mode (green highlight).
 
 #### General Gameplay Section
+
 Core mechanics. Integers and comma-separated lists.
 
 | Field             | What to Enter                          | How to Use                                      | Validation/Tips                                                                 | Save Location                              |
@@ -106,11 +118,13 @@ Core mechanics. Integers and comma-separated lists.
 | **Tutorial Items**| Items to complete tutorial (e.g., "Map,Compass"). | Comma-separated names.                          | Optional; same as above.                                                       | `../Working_game/Tutorial/Required_items.txt` |
 
 **Usage Notes:**
+
 - **Damage Chance**: Fraction is 1/[your value]. E.g., 4 = 25% per room entry.
 - **Coordinates**: X,Y,Z for 3D space. Validate format to avoid crashes.
 - **Items**: Case-sensitive; match your game's item IDs. No spaces in names (use underscores if needed).
 
 ### Saving in Game Setup
+
 - **Validate & Save Button**: Bottom-center. Runs full validation:
   - Required fields checked (e.g., Title, Health).
   - File existence/types enforced.
@@ -126,12 +140,14 @@ Core mechanics. Integers and comma-separated lists.
 ## Other Tabs: Overview
 
 ### Tutorial Tab
+
 A grid-based editor for tutorial levels (single-floor, 40x40 max grid).
+
 - **Grid Canvas**: Click cells to place rooms/items (background #333333 hides lines for clean borders).
 - **Info Display**: Right panel shows selected cell details (e.g., room type).
 - **Plus Buttons**: Add rows/columns dynamically.
 - **Save**: Bottom button saves grid state to tutorial files.
-- **Usage**: 
+- **Usage**:
   - Hover for tooltips.
   - Clear info via internal functions (e.g., for selected cells).
   - Focus on placing tutorial items from Game Setup.
@@ -139,29 +155,36 @@ A grid-based editor for tutorial levels (single-floor, 40x40 max grid).
 **Tip:** Grid state is stored in memory. Save for persistence.
 
 ### Main Level Tab
+
 Similar to Tutorial but for core levels. Configure multi-floor grids, damage text, etc.
+
 - **Save**: Validates and saves level data.
 - **Usage**: Click to build rooms and layout. Link to Win Location from Game Setup.
 
 ### Export Tab
+
 - Packages your `Working_game/` into a distributable (e.g., ZIP).
 - **Fields**: Output path, include assets checkbox.
 - **Usage**: Click "Export" after full setup. Handles dependencies like fonts/music.
 
 ### Return to Hub Tab
+
 - Integrates with Echo Engine's hub system.
 - **Usage**: Button to launch hub and close the editor.
 
 ### Test App Tab
+
 - Previews your game with current config.
 - **Usage**: Click "Run Test" to launch a preview (subprocess call).
 - **Tip:** Fixes in setup first—crashes here indicate validation misses.
 
 ### About Tab
+
 - Credits, version (v1.1.0), links to Nova Foundry.
 - **Usage**: Read-only; click links to open browser.
 
 ### Help Tab
+
 - Embeds this document or links to GitHub wiki.
 - **Usage**: Searchable text for quick ref.
 
@@ -170,14 +193,13 @@ Similar to Tutorial but for core levels. Configure multi-floor grids, damage tex
 ## Functions and Advanced Usage
 
 ### Core Features
+
 - **File Pickers (📂)**: Integrated browser for assets; auto-validates extensions.
 - **Text-or-File Widgets**: Toggle between loading .txt or typing; mutual exclusive checkboxes.
 - **Validation System**: Real-time on blur; full check on save. Handles copies, conversions (e.g., MP3 to WAV), and parsing (e.g., commas to newlines).
 - **Auto-Highlighting**: Green for loaded content; resets on empty.
 - **Tooltips**: Hover for inline help on all labels/fields.
 - **Image Preview**: Scaled display for icons (via internal canvas).
-
-
 
 **User Tip:** For large texts, use external .txt files to avoid textbox limits. All saves use UTF-8.
 
