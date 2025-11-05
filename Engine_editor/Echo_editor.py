@@ -1,6 +1,6 @@
 # Jack Murray
 # Nova Foundry / Echo Editor
-# v1.1.0
+# v1.2.0
 import customtkinter as ctk
 from CTkMessagebox import CTkMessagebox
 from PIL import Image, ImageTk
@@ -1747,7 +1747,9 @@ def setup_main_ui():
             script_dir = save_base_path
             parent_dir = os.path.abspath(os.path.join(script_dir,".."))
             exe_path = os.path.join(parent_dir,"Echo_hub.exe")
-            subprocess.Popen(exe_path)
+            # Launch the hub with its own directory as the working directory so
+            # relative file paths inside the launched EXE resolve correctly.
+            subprocess.Popen([exe_path], cwd=os.path.dirname(exe_path))
             app.destroy()
         except Exception as e:
             CTkMessagebox(title="Error", message=f"Failed to launch Hub:\n{e}", icon="cancel")
@@ -1756,7 +1758,10 @@ def setup_main_ui():
             script_dir = save_base_path
             # The test app is inside the Working_game directory now
             exe_path = os.path.join(script_dir,"../Working_game/Echo_runner.exe")
-            subprocess.Popen(exe_path)
+            # Ensure the launched runner's current working directory is the
+            # runner's folder. Many apps use relative paths internally; if
+            # launched from a different cwd they fail to find files.
+            subprocess.Popen([exe_path], cwd=os.path.dirname(exe_path))
         except Exception as e:
             CTkMessagebox(title="Error", message=f"Failed to launch Test App:\n{e}", icon="cancel")
     def on_tab_change():
@@ -1852,7 +1857,7 @@ def setup_main_ui():
     echo_path = os.path.join(base_path, "Icons", "Echo_engine", "Echo_engine_transparent.png")
     display_image_scaled(nova_path, about_container, scale=0.2)
     display_image_scaled(echo_path, about_container, scale=0.2)
-    version_label = ctk.CTkLabel(about_container,text="Echo Editor v1.1.0",font=(custom_font_family,16))
+    version_label = ctk.CTkLabel(about_container,text="Echo Editor v1.2.0",font=(custom_font_family,16))
     version_label.pack(pady=(10,20))
     license_text = (
         "© Nova Foundry 2025. All rights reserved.\n\n"
