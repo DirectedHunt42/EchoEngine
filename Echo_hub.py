@@ -20,7 +20,7 @@ EXPORT_SOURCE = r"Working_game"
 DEFAULT_WIDTH = 600
 DEFAULT_HEIGHT = 680   # increased height to fit title
 PROGRESS_AREA_HEIGHT = 70
-VERSION = "2.3"
+VERSION = "2.3.1"
 GITURL = "https://github.com/DirectedHunt42/EchoEngine"
 
 # ---------- Helper Functions ----------
