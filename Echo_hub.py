@@ -20,7 +20,7 @@ EXPORT_SOURCE = r"Working_game"
 DEFAULT_WIDTH = 600
 DEFAULT_HEIGHT = 680   # increased height to fit title
 PROGRESS_AREA_HEIGHT = 70
-VERSION = "2.3.1"
+VERSION = "2.3.2"
 GITURL = "https://github.com/DirectedHunt42/EchoEngine"
 
 # ---------- Helper Functions ----------
@@ -456,7 +456,7 @@ if logo_ctk:
     logo_label = ctk.CTkLabel(frame, image=logo_ctk, text="")
     logo_label.pack(pady=10)
 
-ctk.CTkLabel(frame, text="v1.2.0", font=("Segoe UI", 10), text_color="gray").pack(pady=(0, 10))
+ctk.CTkLabel(frame, text="v1.2.0, © Nova Foundry 2025, Git Release: " + VERSION, font=("Segoe UI", 10), text_color="gray").pack(pady=(0, 10))
 
 # ---------- Start ----------
 hide_progress_indicators()
