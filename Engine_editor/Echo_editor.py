@@ -1,6 +1,6 @@
 # Jack Murray
 # Nova Foundry / Echo Editor
-# v1.2.1
+# v1.2.2
 import customtkinter as ctk
 from CTkMessagebox import CTkMessagebox
 from PIL import Image, ImageTk
@@ -248,7 +248,6 @@ def setup_main_ui():
     add_section(scroll_frame, "Basic")
     inputs["Title"] = add_input(scroll_frame,"Title:",tooltip_text="Game title")
     inputs["Font"] = add_input(scroll_frame,"Font:",file_picker=True,font_only=True,tooltip_text="Choose .ttf font",accepted_ext=[".ttf"])
-    inputs["Title Font"] = add_input(scroll_frame,"Title Font:",file_picker=True,font_only=True,tooltip_text="Choose .ttf font for titles",accepted_ext=[".ttf"])
     inputs["Icon"] = add_input(scroll_frame,"Icon:",file_picker=True,tooltip_text="Game icon",accepted_ext=[".png",".jpg",".jpeg",".ico"])
     inputs["Music"] = add_input(scroll_frame,"Music:",file_picker=True,tooltip_text="Background music",accepted_ext=[".mp3",".wav",".ogg"])
     inputs["Credits"] = add_text_with_path(scroll_frame, "Credits:", tooltip_text="Credits text shown at the end of the game")
@@ -268,7 +267,6 @@ def setup_main_ui():
     save_paths = {
         "Title": r"../Working_game/Text/Misc/Title.txt",
         "Font": r"../Working_game/Fonts/Font.ttf",
-        "Title Font": r"../Working_game/Fonts/Title_Font.ttf",
         "Icon": r"../Working_game/Icons/Icon.png",
         "Music": r"../Working_game/Sounds/Background.wav",
         "Base Health": r"../Working_game/Finishing/Default_health.txt",
@@ -284,7 +282,6 @@ def setup_main_ui():
     }
     accepted_extensions = {
         "Font": [".ttf"],
-        "Title Font": [".ttf"],
         "Icon": [".png", ".jpg", ".jpeg", ".ico"],
         "Music": [".mp3", ".wav", ".ogg"]
     }
@@ -369,7 +366,7 @@ def setup_main_ui():
     def validate_game_setup():
         errors = []
         required_text_fields = ["Title", "Base Health", "Damage Chance"]
-        optional_file_fields = ["Font", "Title Font", "Music", "Icon"]
+        optional_file_fields = ["Font", "Music", "Icon"]
         for key, widget in inputs.items():
             path = os.path.join(save_base_path, save_paths[key])
             # --- Entries ---
@@ -440,7 +437,7 @@ def setup_main_ui():
         try:
             # Define which entry fields must always be enetered
             required_file_fields = []
-            optional_file_fields = ["Font", "Title Font", "Music", "Icon"]
+            optional_file_fields = ["Font", "Music", "Icon"]
             errors = []
             print("[Echo Editor] save_game_setup invoked")
             for key, widget in inputs.items():
@@ -1861,7 +1858,7 @@ def setup_main_ui():
     echo_path = os.path.join(base_path, "Icons", "Echo_engine", "Echo_engine_transparent.png")
     display_image_scaled(nova_path, about_container, scale=0.2)
     display_image_scaled(echo_path, about_container, scale=0.2)
-    version_label = ctk.CTkLabel(about_container,text="Echo Editor v1.2.1",font=(custom_font_family,16))
+    version_label = ctk.CTkLabel(about_container,text="Echo Editor v1.2.2",font=(custom_font_family,16))
     version_label.pack(pady=(10,20))
     license_text = (
         "© Nova Foundry 2025. All rights reserved.\n\n"
