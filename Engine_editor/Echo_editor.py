@@ -1,6 +1,6 @@
 # Jack Murray
 # Nova Foundry / Echo Editor
-# v1.2.0
+# v1.2.2
 import customtkinter as ctk
 from CTkMessagebox import CTkMessagebox
 from PIL import Image, ImageTk
@@ -9,6 +9,7 @@ import os
 import shutil
 import webbrowser
 import tkinter as tk
+import traceback
 from tkinter import font as tkFont, filedialog, Toplevel, Label
 from collections import deque
 import sys
@@ -265,7 +266,6 @@ def setup_main_ui():
     add_section(scroll_frame, "Basic")
     inputs["Title"] = add_input(scroll_frame,"Title:",tooltip_text="Game title")
     inputs["Font"] = add_input(scroll_frame,"Font:",file_picker=True,font_only=True,tooltip_text="Choose .ttf font",accepted_ext=[".ttf"])
-    inputs["Title Font"] = add_input(scroll_frame,"Title Font:",file_picker=True,font_only=True,tooltip_text="Choose .ttf font for titles",accepted_ext=[".ttf"])
     inputs["Icon"] = add_input(scroll_frame,"Icon:",file_picker=True,tooltip_text="Game icon",accepted_ext=[".png",".jpg",".jpeg",".ico"])
     inputs["Music"] = add_input(scroll_frame,"Music:",file_picker=True,tooltip_text="Background music",accepted_ext=[".mp3",".wav",".ogg"])
     inputs["Credits"] = add_text_with_path(scroll_frame, "Credits:", tooltip_text="Credits text shown at the end of the game")
@@ -285,7 +285,6 @@ def setup_main_ui():
     save_paths = {
         "Title": r"../Working_game/Text/Misc/Title.txt",
         "Font": r"../Working_game/Fonts/Font.ttf",
-        "Title Font": r"../Working_game/Fonts/Title_Font.ttf",
         "Icon": r"../Working_game/Icons/Icon.png",
         "Music": r"../Working_game/Sounds/Background.wav",
         "Base Health": r"../Working_game/Finishing/Default_health.txt",
@@ -301,7 +300,6 @@ def setup_main_ui():
     }
     accepted_extensions = {
         "Font": [".ttf"],
-        "Title Font": [".ttf"],
         "Icon": [".png", ".jpg", ".jpeg", ".ico"],
         "Music": [".mp3", ".wav", ".ogg"]
     }
@@ -386,7 +384,7 @@ def setup_main_ui():
     def validate_game_setup():
         errors = []
         required_text_fields = ["Title", "Base Health", "Damage Chance"]
-        optional_file_fields = ["Font", "Title Font", "Music", "Icon"]
+        optional_file_fields = ["Font", "Music", "Icon"]
         for key, widget in inputs.items():
             path = os.path.join(save_base_path, save_paths[key])
             # --- Entries ---
@@ -454,162 +452,165 @@ def setup_main_ui():
                     errors.append(f"{key}: must provide either file or text.")
         return errors
     def save_game_setup():
-        # Define which entry fields must always be enetered
-        required_file_fields = []
-        optional_file_fields = ["Font", "Title Font", "Music", "Icon"]
-        errors = []
-        for key, widget in inputs.items():
-            path = os.path.join(save_base_path, save_paths[key])
-            os.makedirs(os.path.dirname(path), exist_ok=True) # Ensure folder exists
-            # --- Entries ---
-            if isinstance(widget, ctk.CTkEntry):
-                value = widget.get().strip()
-                # New logic for "Win Location", "Win Items", and "Tutorial Items"
-                if key == "Win Location":
-                    # Check for empty input
-                    if not value:
-                        widget.configure(fg_color="#444444")
-                        continue
-                   
-                    # Check for "double commas" or commas at start/end
-                    if ",," in value or value.startswith(',') or value.endswith(','):
-                        errors.append(f"{key}: Invalid format. Avoid adjacent commas.")
-                        widget.configure(fg_color="#661111")
-                        continue
-                   
-                    # Split by comma and clean up spaces
-                    coords = [c.strip() for c in value.split(',')]
-                   
-                    # Check if there are exactly 3 parts and all are numbers
-                    if len(coords) != 3 or not all(c.isdigit() or (c.startswith('-') and c[1:].isdigit()) for c in coords):
-                        errors.append(f"{key}: Must have exactly three numbers (e.g., X,Y,Z).")
-                        widget.configure(fg_color="#661111")
-                        continue
-                   
-                    # If valid, format for saving (one per line)
-                    save_value = "\n".join(coords)
-                    with open(path, "w", encoding="utf-8") as f:
-                        f.write(save_value)
-                    widget.configure(fg_color="#444444")
-                    continue
-                elif key in ["Win Items", "Tutorial Items"]:
-                    # Split by comma and save each item on a new line
-                    items = [item.strip() for item in value.split(',')]
-                    # Filter out any empty strings that might result from trailing commas or spaces
-                    valid_items = [item for item in items if item]
-                    save_value = "\n".join(valid_items)
-                    with open(path, "w", encoding="utf-8") as f:
-                        f.write(save_value)
-                    widget.configure(fg_color="#444444")
-                    continue
-                # Old logic for other fields (no changes here)
-                # ---------- Required Text ----------
-                # Removed required checks, treat as optional text
-                if value:
-                    if key in ["Base Health", "Damage Chance"]:
-                        if not value.isdigit() or int(value) <= 0:
-                            errors.append(f"{key} must be a positive integer.")
+        try:
+            # Define which entry fields must always be enetered
+            required_file_fields = []
+            optional_file_fields = ["Font", "Music", "Icon"]
+            errors = []
+            print("[Echo Editor] save_game_setup invoked")
+            for key, widget in inputs.items():
+                path = os.path.join(save_base_path, save_paths[key])
+                os.makedirs(os.path.dirname(path), exist_ok=True) # Ensure folder exists
+                # --- Entries ---
+                if isinstance(widget, ctk.CTkEntry):
+                    value = widget.get().strip()
+                    # New logic for "Win Location", "Win Items", and "Tutorial Items"
+                    if key == "Win Location":
+                        # Check for empty input
+                        if not value:
+                            widget.configure(fg_color="#444444")
+                            continue
+                        # Check for "double commas" or commas at start/end
+                        if ",," in value or value.startswith(',') or value.endswith(','):
+                            errors.append(f"{key}: Invalid format. Avoid adjacent commas.")
                             widget.configure(fg_color="#661111")
                             continue
-                    widget.configure(fg_color="#444444")
-                    with open(path, "w", encoding="utf-8") as f:
-                        f.write(value)
-                else:
-                    with open(path, "w", encoding="utf-8") as f:
-                        f.write("")
-                    widget.configure(fg_color="#444444")
-                # ---------- Required File ----------
-                if key in required_file_fields:
-                    widget.configure(fg_color="#444444")
-                # ---------- Optional File ----------
-                elif key in optional_file_fields:
+                        # Split by comma and clean up spaces
+                        coords = [c.strip() for c in value.split(',')]
+                        # Check if there are exactly 3 parts and all are numbers
+                        if len(coords) != 3 or not all(c.isdigit() or (c.startswith('-') and c[1:].isdigit()) for c in coords):
+                            errors.append(f"{key}: Must have exactly three numbers (e.g., X,Y,Z).")
+                            widget.configure(fg_color="#661111")
+                            continue
+                        # If valid, format for saving (one per line)
+                        save_value = "\n".join(coords)
+                        with open(path, "w", encoding="utf-8") as f:
+                            f.write(save_value)
+                        widget.configure(fg_color="#444444")
+                        continue
+                    elif key in ["Win Items", "Tutorial Items"]:
+                        # Split by comma and save each item on a new line
+                        items = [item.strip() for item in value.split(',')]
+                        # Filter out any empty strings that might result from trailing commas or spaces
+                        valid_items = [item for item in items if item]
+                        save_value = "\n".join(valid_items)
+                        with open(path, "w", encoding="utf-8") as f:
+                            f.write(save_value)
+                        widget.configure(fg_color="#444444")
+                        continue
+                    # Old logic for other fields (no changes here)
+                    # ---------- Required Text ----------
+                    # Removed required checks, treat as optional text
                     if value:
-                        if not os.path.exists(value):
-                            errors.append(f"{key}: file not found.")
-                            widget.configure(fg_color="#661111")
-                            continue
-                        if not any(value.lower().endswith(ext) for ext in accepted_extensions[key]):
-                            errors.append(f"{key}: invalid file type. Must be {', '.join(accepted_extensions[key])}")
-                            widget.configure(fg_color="#661111")
-                            continue
-                        widget.configure(fg_color="#444444")
-                        if key == "Music":
-                            if value.lower().endswith('.wav'):
-                                shutil.copy(value, path)
-                            else:
-                                if shutil.which("ffmpeg") is not None:
-                                    try:
-                                        subprocess.run(
-                                            ["ffmpeg", "-y", "-i", value, path],
-                                            check=True,
-                                            stdout=subprocess.DEVNULL,
-                                            stderr=subprocess.DEVNULL
-                                        )
-                                    except Exception as e:
-                                        errors.append(f"{key}: failed to convert music - {e}")
-                                        widget.configure(fg_color="#661111")
-                                else:
-                                    errors.append(f"{key}: ffmpeg not found, cannot convert {os.path.splitext(value)[1]} to .wav. Please provide .wav file or install ffmpeg.")
-                                    widget.configure(fg_color="#661111")
-                        elif key == "Icon":
-                            try:
-                                img = Image.open(value)
-                                img.save(path, "PNG")
-                            except Exception as e:
-                                errors.append(f"{key}: failed to convert icon - {e}")
+                        if key in ["Base Health", "Damage Chance"]:
+                            if not value.isdigit() or int(value) <= 0:
+                                errors.append(f"{key} must be a positive integer.")
                                 widget.configure(fg_color="#661111")
-                        else:
-                            shutil.copy(value, path)
-                    else:
-                        if os.path.exists(path):
-                            os.remove(path)
-                        widget.configure(fg_color="#444444")
-                # ---------- Default to plain text (optional) ----------
-                else:
-                    if value:
+                                continue
                         widget.configure(fg_color="#444444")
                         with open(path, "w", encoding="utf-8") as f:
                             f.write(value)
                     else:
-                        widget.configure(fg_color="#444444")
-            # --- Text sections ---
-            elif isinstance(widget, tuple) and len(widget) == 6:
-                path_entry, textbox, path_var, text_var, err_path_lbl, err_text_lbl = widget
-                if path_var.get():
-                    src = path_entry.get().strip()
-                    if src:
-                        if not os.path.exists(src):
-                            errors.append(f"{key}: file not found.")
-                            path_entry.configure(fg_color="#661111")
-                            err_path_lbl.configure(text="File not found")
-                            continue
-                        if not src.lower().endswith(".txt"):
-                            errors.append(f"{key}: file must be .txt")
-                            path_entry.configure(fg_color="#661111")
-                            err_path_lbl.configure(text="Invalid file type")
-                            continue
-                        # Instead of copying, read text and save it
-                        with open(src, "r", encoding="utf-8") as f_in, open(path, "w", encoding="utf-8") as f_out:
-                            f_out.write(f_in.read())
-                        path_entry.configure(fg_color="#444444")
-                        err_path_lbl.configure(text="")
-                    else:
                         with open(path, "w", encoding="utf-8") as f:
                             f.write("")
-                        path_entry.configure(fg_color="#444444")
-                        err_path_lbl.configure(text="")
-                elif text_var.get():
-                    txt = textbox.get("1.0","end").strip()
-                    with open(path, "w", encoding="utf-8") as f:
-                        f.write(txt)
-                    textbox.configure(fg_color="#444444")
-                    err_text_lbl.configure(text="")
-        if errors:
-            CTkMessagebox(title="Validation Error", message="\n".join(errors), icon="cancel")
-        else:
-            # On successful save, update the colors to green
-            load_and_highlight_existing()
-            CTkMessagebox(title="Success", message="All fields validated and saved!", icon="check")
+                        widget.configure(fg_color="#444444")
+                    # ---------- Required File ----------
+                    if key in required_file_fields:
+                        widget.configure(fg_color="#444444")
+                    # ---------- Optional File ----------
+                    elif key in optional_file_fields:
+                        if value:
+                            if not os.path.exists(value):
+                                errors.append(f"{key}: file not found.")
+                                widget.configure(fg_color="#661111")
+                                continue
+                            if not any(value.lower().endswith(ext) for ext in accepted_extensions[key]):
+                                errors.append(f"{key}: invalid file type. Must be {', '.join(accepted_extensions[key])}")
+                                widget.configure(fg_color="#661111")
+                                continue
+                            widget.configure(fg_color="#444444")
+                            if key == "Music":
+                                if value.lower().endswith('.wav'):
+                                    shutil.copy(value, path)
+                                else:
+                                    if shutil.which("ffmpeg") is not None:
+                                        try:
+                                            subprocess.run(
+                                                ["ffmpeg", "-y", "-i", value, path],
+                                                check=True,
+                                                stdout=subprocess.DEVNULL,
+                                                stderr=subprocess.DEVNULL
+                                            )
+                                        except Exception as e:
+                                            errors.append(f"{key}: failed to convert music - {e}")
+                                            widget.configure(fg_color="#661111")
+                                    else:
+                                        errors.append(f"{key}: ffmpeg not found, cannot convert {os.path.splitext(value)[1]} to .wav. Please provide .wav file or install ffmpeg.")
+                                        widget.configure(fg_color="#661111")
+                            elif key == "Icon":
+                                try:
+                                    img = Image.open(value)
+                                    img.save(path, "PNG")
+                                except Exception as e:
+                                    errors.append(f"{key}: failed to convert icon - {e}")
+                                    widget.configure(fg_color="#661111")
+                            else:
+                                shutil.copy(value, path)
+                        else:
+                            if os.path.exists(path):
+                                os.remove(path)
+                            widget.configure(fg_color="#444444")
+                    # ---------- Default to plain text (optional) ----------
+                    else:
+                        if value:
+                            widget.configure(fg_color="#444444")
+                            with open(path, "w", encoding="utf-8") as f:
+                                f.write(value)
+                        else:
+                            widget.configure(fg_color="#444444")
+                # --- Text sections ---
+                elif isinstance(widget, tuple) and len(widget) == 6:
+                    path_entry, textbox, path_var, text_var, err_path_lbl, err_text_lbl = widget
+                    if path_var.get():
+                        src = path_entry.get().strip()
+                        if src:
+                            if not os.path.exists(src):
+                                errors.append(f"{key}: file not found.")
+                                path_entry.configure(fg_color="#661111")
+                                err_path_lbl.configure(text="File not found")
+                                continue
+                            if not src.lower().endswith(".txt"):
+                                errors.append(f"{key}: file must be .txt")
+                                path_entry.configure(fg_color="#661111")
+                                err_path_lbl.configure(text="Invalid file type")
+                                continue
+                            # Instead of copying, read text and save it
+                            with open(src, "r", encoding="utf-8") as f_in, open(path, "w", encoding="utf-8") as f_out:
+                                f_out.write(f_in.read())
+                            path_entry.configure(fg_color="#444444")
+                            err_path_lbl.configure(text="")
+                        else:
+                            with open(path, "w", encoding="utf-8") as f:
+                                f.write("")
+                            path_entry.configure(fg_color="#444444")
+                            err_path_lbl.configure(text="")
+                    elif text_var.get():
+                        txt = textbox.get("1.0","end").strip()
+                        with open(path, "w", encoding="utf-8") as f:
+                            f.write(txt)
+                        textbox.configure(fg_color="#444444")
+                        err_text_lbl.configure(text="")
+            if errors:
+                CTkMessagebox(title="Validation Error", message="\n".join(errors), icon="cancel")
+            else:
+                # On successful save, update the colors to green
+                load_and_highlight_existing()
+                CTkMessagebox(title="Success", message="All fields validated and saved!", icon="check")
+        except Exception as e:
+            # Surface any unexpected exceptions so they are not silent
+            print("[Echo Editor] Unexpected error in save_game_setup:")
+            traceback.print_exc()
+            CTkMessagebox(title="Error", message=f"Unexpected error during save:\n{e}", icon="cancel")
     # ========================= Load existing data on startup =========================
     load_and_highlight_existing()
     # ========================= Save Button =========================
@@ -1888,7 +1889,7 @@ def setup_main_ui():
     echo_path = os.path.join(base_path, "Icons", "Echo_engine", "Echo_engine_transparent.png")
     display_image_scaled(nova_path, about_container, scale=0.2)
     display_image_scaled(echo_path, about_container, scale=0.2)
-    version_label = ctk.CTkLabel(about_container,text="Echo Editor v1.2.0",font=(custom_font_family,16))
+    version_label = ctk.CTkLabel(about_container,text="Echo Editor v1.2.2",font=(custom_font_family,16))
     version_label.pack(pady=(10,20))
     license_text = (
         "© Nova Foundry 2025. All rights reserved.\n\n"
