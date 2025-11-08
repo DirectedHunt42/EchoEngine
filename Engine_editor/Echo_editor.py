@@ -12,12 +12,30 @@ import tkinter as tk
 from tkinter import font as tkFont, filedialog, Toplevel, Label
 from collections import deque
 import sys
+try:
+    # Lightweight HTML renderer for Tkinter; used to embed help pages in the Help tab
+    from tkinterweb import HtmlFrame
+    WEBVIEW_KIND = 'tkinterweb'
+except Exception:
+    HtmlFrame = None
+    WEBVIEW_KIND = None
+try:
+    # Prefer a robust embedded Chromium when available
+    from cefpython3 import cefpython as cef
+    WEBVIEW_KIND = 'cef'
+except Exception:
+    cef = None
 
 # Base path for static resources (bundled in _MEIPASS for EXE, script dir otherwise)
 resource_base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
 
 # Base path for saving/loading dynamic files (EXE dir for bundled, script dir otherwise)
 save_base_path = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(os.path.abspath(__file__))
+# ---------------- Help resources (assumptions)
+# Default help webpage URL (assumption: replace with real URL if you have one)
+HELP_URL = "https://github.com/DirectedHunt42/EchoEngine/wiki"
+# Default help PDF path relative to resource_base_path. If not present, user will be prompted to pick one.
+HELP_PDF_DEFAULT = os.path.join(resource_base_path, "Docs", "Help", "Help.pdf")
 # ========================= Tooltip Helper =========================
 class ToolTip:
     def __init__(self, widget, text):
@@ -1764,6 +1782,22 @@ def setup_main_ui():
             subprocess.Popen([exe_path], cwd=os.path.dirname(exe_path))
         except Exception as e:
             CTkMessagebox(title="Error", message=f"Failed to launch Test App:\n{e}", icon="cancel")
+    # ---------------- Help helpers ----------------
+    def open_help_pdf(pdf_path=None):
+        # Try default path first, otherwise ask user to pick a PDF
+        try:
+            path_to_open = pdf_path or HELP_PDF_DEFAULT
+            if not path_to_open or not os.path.exists(path_to_open):
+                selected = filedialog.askopenfilename(title="Choose Help PDF", filetypes=[("PDF Files","*.pdf")])
+                if not selected:
+                    return
+                path_to_open = selected
+            # On Windows this will open the file with the associated application
+            os.startfile(path_to_open)
+        except Exception as e:
+            CTkMessagebox(title="Error", message=f"Failed to open Help PDF:\n{e}", icon="cancel")
+
+    # Note: We intentionally do NOT create a separate Toplevel help window. The Help tab contains the in-app help UI.
     def on_tab_change():
         current_tab = tab_view.get()
         about_tab_button.configure(fg_color=ABOUT_COLOR, hover_color=ABOUT_HOVER, text_color="black")
@@ -1781,10 +1815,7 @@ def setup_main_ui():
             export_tab_button.configure(fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black")
             about_tab_button.configure(fg_color=ABOUT_COLOR, hover_color=ABOUT_HOVER, text_color="black")
         elif current_tab == "Help":
-            base_path = resource_base_path
-            help_path = os.path.join(base_path, "Docs", "Help", "Help.pdf")
-            os.startfile(help_path)
-            tab_view.set(previous_tab[0])
+            # Do not open any new windows — help content is contained in the Help tab itself.
             help_tab_button.configure(fg_color=ABOUT_COLOR, hover_color=ABOUT_HOVER, text_color="black")
             about_tab_button.configure(fg_color=ABOUT_COLOR, hover_color=ABOUT_HOVER, text_color="black")
         else:
@@ -1876,5 +1907,100 @@ def setup_main_ui():
                                  text_color="#1E90FF", cursor="hand2", justify="left", wraplength=screen_w-100)
     license_link.pack(pady=(0,20), padx=10)
     license_link.bind("<Button-1>", lambda e: webbrowser.open("https://creativecommons.org/licenses/by-nd/4.0/"))
+    # ========================= Help Tab Content (in-tab controls) =========================
+    help_container = ctk.CTkScrollableFrame(help_tab, fg_color="#222222", corner_radius=10)
+    help_container.pack(expand=True, fill="both", padx=20, pady=20)
+
+    help_header = ctk.CTkLabel(help_container, text="Online Help", font=(custom_font_family, 18, "bold"))
+    help_header.pack(pady=(10,5), anchor="w", padx=10)
+
+    # Embed the help webpage inside the tab when possible (tkinterweb HtmlFrame).
+    # Prefer CEF (Chromium) embed if available for modern web pages
+    if WEBVIEW_KIND == 'cef' and cef is not None:
+        # Host frame to embed CEF browser
+        cef_host_frame = ctk.CTkFrame(help_container, fg_color="#1e1e1e")
+        cef_host_frame.pack(fill="both", expand=True, padx=10, pady=(5,10))
+        # Create a plain tk.Frame to get a native window handle
+        cef_host = tk.Frame(cef_host_frame, bg="#1e1e1e")
+        cef_host.pack(fill="both", expand=True)
+
+        cef_browser_state = {"browser": None, "initialized": False, "started_loop": False}
+
+        def _cef_initialize():
+            if not cef_browser_state["initialized"]:
+                settings = {}
+                try:
+                    cef.Initialize(settings=settings)
+                except Exception:
+                    pass
+                cef_browser_state["initialized"] = True
+
+        def _create_cef_browser():
+            try:
+                _cef_initialize()
+                handle = cef_host.winfo_id()
+                window_info = cef.WindowInfo()
+                # On Windows set as child
+                window_info.SetAsChild(handle)
+                browser = cef.CreateBrowserSync(window_info, url=HELP_URL)
+                cef_browser_state["browser"] = browser
+                # Start pumping the CEF message loop periodically
+                if not cef_browser_state["started_loop"]:
+                    def _cef_loop():
+                        if cef_browser_state["initialized"]:
+                            cef.MessageLoopWork()
+                            app.after(10, _cef_loop)
+                    cef_browser_state["started_loop"] = True
+                    app.after(10, _cef_loop)
+            except Exception as e:
+                CTkMessagebox(title="Error", message=f"Failed to embed Chromium browser: {e}\nOpening in external browser instead.", icon="warning")
+                try:
+                    webbrowser.open_new(HELP_URL)
+                except Exception:
+                    pass
+
+        # Create the browser when the host frame is realized (has an id and shown)
+        def _on_host_configure(event=None):
+            if cef_browser_state["browser"] is None:
+                _create_cef_browser()
+
+        cef_host.bind("<Configure>", _on_host_configure)
+
+        # Ensure clean shutdown when the main app closes
+        def _shutdown_cef():
+            try:
+                if cef_browser_state.get("browser") is not None:
+                    try:
+                        cef_browser_state["browser"].CloseBrowser(True)
+                    except Exception:
+                        pass
+                if cef_browser_state.get("initialized"):
+                    try:
+                        cef.Shutdown()
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+        # Register shutdown handler
+        try:
+            app.protocol("WM_DELETE_WINDOW", lambda: (_shutdown_cef(), app.destroy()))
+        except Exception:
+            pass
+    else:
+        # Fallback: show link and an 'Open in Browser' button
+        faux_frame = ctk.CTkFrame(help_container, fg_color="#1e1e1e")
+        faux_frame.pack(fill="both", expand=False, padx=10, pady=(5,10))
+        url_label = ctk.CTkLabel(faux_frame, text=HELP_URL, font=(custom_font_family, 14), text_color="#1E90FF", cursor="hand2")
+        url_label.pack(padx=10, pady=(10,5), anchor="w")
+        url_label.bind("<Button-1>", lambda e: webbrowser.open_new(HELP_URL))
+        open_browser_inline = ctk.CTkButton(faux_frame, text="Open in Browser", fg_color="#2638DB", hover_color="#321FDD", command=lambda: webbrowser.open_new(HELP_URL))
+        open_browser_inline.pack(padx=10, pady=(0,10), anchor="w")
+
+    # Button below the 'window' to open the help PDF
+    open_pdf_tab_btn = ctk.CTkButton(help_container, text="Open Help PDF", font=(custom_font_family, 14),
+                                     fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black",
+                                     command=lambda: open_help_pdf())
+    open_pdf_tab_btn.pack(pady=(10,20))
 setup_main_ui()
 app.mainloop()
