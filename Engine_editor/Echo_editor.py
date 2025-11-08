@@ -76,7 +76,7 @@ class ToolTip:
             self.tip_window = None
 # ========================= Main App =========================
 app = ctk.CTk()
-app.title("Echo Editor")
+app.title("🛠️ Echo Editor")
 # ---------- Custom App Icon ----------
 icon_path = os.path.join(resource_base_path, r"Icons/App_icon/Echo_editor.ico")
 print(icon_path)
