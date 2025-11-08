@@ -22,7 +22,7 @@ EXPORT_SOURCE = r"Working_game"
 DEFAULT_WIDTH = 600
 DEFAULT_HEIGHT = 750
 PROGRESS_AREA_HEIGHT = 70
-VERSION = "2.5"
+VERSION = "2.5.1"
 GITURL = "https://github.com/DirectedHunt42/EchoEngine"
 ASCII_ART_GENERATOR_PATH = r"Ascii_generator.exe"
 
