@@ -5,6 +5,7 @@
 import os
 import sys
 import shutil
+import webbrowser
 import zipfile
 import threading
 import subprocess
@@ -13,6 +14,7 @@ from tkinter import filedialog
 from PIL import Image
 import urllib.request
 import json
+import tkinter as tk
 
 # ---------- CONFIG ----------
 IMPORT_DESTINATION = r"Working_game"
@@ -462,8 +464,6 @@ ascii_btn = ctk.CTkButton(frame, text="ASCII Art Generator", command=open_ascii_
 ascii_btn.pack(pady=(15, 20)) # Added a bit more padding for separation
 
 progress_frame = ctk.CTkFrame(frame, fg_color="transparent")
-
-progress_frame = ctk.CTkFrame(frame, fg_color="transparent")
 status_label = ctk.CTkLabel(progress_frame, text="", font=("Segoe UI", 12))
 status_label.pack(pady=(0, 2))
 progress_bar = ctk.CTkProgressBar(progress_frame, height=15)
@@ -476,7 +476,33 @@ if logo_ctk:
     logo_label = ctk.CTkLabel(frame, image=logo_ctk, text="")
     logo_label.pack(pady=10)
 
-ctk.CTkLabel(frame, text="v1.2.1, © Nova Foundry 2025, Git Release: " + VERSION, font=("Segoe UI", 10), text_color="gray").pack(pady=(0, 10))
+# --- HYPERLINK SETUP ---
+LINK_URL = "https://buymeacoffee.com/novafoundry"
+
+def open_link(event):
+    # This function uses the imported `webbrowser` module from earlier
+    webbrowser.open_new_tab(LINK_URL)
+
+bottom_frame = ctk.CTkFrame(frame, fg_color="transparent")
+bottom_frame.pack(pady=(0, 10))
+
+ctk.CTkLabel(
+    bottom_frame, 
+    text=f"v1.2.1, © Nova Foundry 2025, Git Release: {VERSION}, ", 
+    font=("Segoe UI", 10), 
+    text_color="gray"
+).pack(side=tk.LEFT, padx=(0, 0))
+
+link_label = ctk.CTkLabel(
+    bottom_frame, 
+    text="Support Nova Foundry", # The text you want to display for the link
+    font=("Segoe UI", 10, "underline"), # Added 'underline' for link appearance
+    text_color="#90caf9", # A light blue color for links
+    cursor="hand2" # Changes the mouse cursor on hover
+)
+link_label.pack(side=tk.LEFT, padx=(0, 0))
+
+link_label.bind("<Button-1>", open_link)
 
 # ---------- Start ----------
 hide_progress_indicators()
