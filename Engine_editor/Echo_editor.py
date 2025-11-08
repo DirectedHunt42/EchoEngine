@@ -1,6 +1,6 @@
 # Jack Murray
 # Nova Foundry / Echo Editor
-# v1.2.2
+# v1.3.0
 import customtkinter as ctk
 from CTkMessagebox import CTkMessagebox
 from PIL import Image, ImageTk
@@ -1889,7 +1889,7 @@ def setup_main_ui():
     echo_path = os.path.join(base_path, "Icons", "Echo_engine", "Echo_engine_transparent.png")
     display_image_scaled(nova_path, about_container, scale=0.2)
     display_image_scaled(echo_path, about_container, scale=0.2)
-    version_label = ctk.CTkLabel(about_container,text="Echo Editor v1.2.2",font=(custom_font_family,16))
+    version_label = ctk.CTkLabel(about_container,text="Echo Editor v1.3.0",font=(custom_font_family,16))
     version_label.pack(pady=(10,20))
     license_text = (
         "© Nova Foundry 2025. All rights reserved.\n\n"
