@@ -1,6 +1,6 @@
 # Jack Murray
 # Nova Foundry / Echo Hub
-# v1.2.0
+# v1.2.1
 
 import os
 import sys
@@ -18,10 +18,11 @@ import json
 IMPORT_DESTINATION = r"Working_game"
 EXPORT_SOURCE = r"Working_game"
 DEFAULT_WIDTH = 600
-DEFAULT_HEIGHT = 680   # increased height to fit title
+DEFAULT_HEIGHT = 750
 PROGRESS_AREA_HEIGHT = 70
-VERSION = "2.4"
+VERSION = "2.5"
 GITURL = "https://github.com/DirectedHunt42/EchoEngine"
+ASCII_ART_GENERATOR_PATH = r"Ascii_generator.exe"
 
 # ---------- Helper Functions ----------
 def show_custom_message(title, message, is_error=False):
@@ -302,6 +303,17 @@ def open_project():
     except Exception as e:
         show_custom_message("Error", str(e), is_error=True)
 
+def open_ascii_generator():
+    if not os.path.exists(ASCII_ART_GENERATOR_PATH):
+        show_custom_message("Error", f"ASCII Art Generator not found at:\n{ASCII_ART_GENERATOR_PATH}", is_error=True)
+        return
+    try:
+        # Launch the executable without waiting for it to finish
+        subprocess.Popen(ASCII_ART_GENERATOR_PATH)
+        app.destroy()
+    except Exception as e:
+        show_custom_message("Error", f"Failed to open ASCII Art Generator: {str(e)}", is_error=True)
+
 # ---------- Auto Update ----------
 def check_for_update():
     def check_task():
@@ -443,6 +455,14 @@ clear_btn = ctk.CTkButton(frame, text="Clear Working Directory",
                           width=btn_width, height=btn_height, corner_radius=10, fg_color=btn_color)
 clear_btn.pack(pady=10)
 
+ascii_btn = ctk.CTkButton(frame, text="ASCII Art Generator", command=open_ascii_generator,
+                          width=btn_width - 50,  # Smaller width
+                          height=btn_height - 10, # Smaller height
+                          corner_radius=8)
+ascii_btn.pack(pady=(15, 20)) # Added a bit more padding for separation
+
+progress_frame = ctk.CTkFrame(frame, fg_color="transparent")
+
 progress_frame = ctk.CTkFrame(frame, fg_color="transparent")
 status_label = ctk.CTkLabel(progress_frame, text="", font=("Segoe UI", 12))
 status_label.pack(pady=(0, 2))
@@ -456,7 +476,7 @@ if logo_ctk:
     logo_label = ctk.CTkLabel(frame, image=logo_ctk, text="")
     logo_label.pack(pady=10)
 
-ctk.CTkLabel(frame, text="v1.2.0, © Nova Foundry 2025, Git Release: " + VERSION, font=("Segoe UI", 10), text_color="gray").pack(pady=(0, 10))
+ctk.CTkLabel(frame, text="v1.2.1, © Nova Foundry 2025, Git Release: " + VERSION, font=("Segoe UI", 10), text_color="gray").pack(pady=(0, 10))
 
 # ---------- Start ----------
 hide_progress_indicators()
