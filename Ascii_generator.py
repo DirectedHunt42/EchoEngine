@@ -5,12 +5,13 @@
 import os
 import subprocess
 import threading
+import webbrowser
 import customtkinter as ctk
 from tkinter import filedialog
 from PIL import Image, ImageEnhance
+import tkinter as tk
 
 # ---------- CONFIG ----------
-# ⭐ CHANGED: Reverted to a narrower width since the side-by-side preview is removed
 DEFAULT_WIDTH = 700
 DEFAULT_HEIGHT = 1000
 # Removed PREVIEW_MAX_WIDTH and PREVIEW_MAX_HEIGHT
@@ -53,8 +54,6 @@ def show_custom_message(title, message, is_error=False):
     
     btn = ctk.CTkButton(dialog, text="OK", command=dialog.destroy, width=100)
     btn.pack(pady=10)
-
-# ⭐ REMOVED: load_preview_image function is no longer needed
 
 def convert_to_ascii(image, style_chars, new_width=100, contrast_factor=1.0, invert=False):
     """Core logic to convert a PIL Image to an ASCII string."""
@@ -382,15 +381,10 @@ invert_container.pack(fill="x", pady=5, anchor="w")
 invert_switch = ctk.CTkSwitch(invert_container, text="Invert Light/Dark Mapping", onvalue=1, offvalue=0)
 invert_switch.pack(side="left", padx=(0, 10), pady=5)
 
-
-# ⭐ REMOVED: Image Preview section (label creation and packing) is gone entirely
-
-
 # --- Action Button ---
 convert_btn = ctk.CTkButton(frame, text="Convert to ASCII",
                             command=start_conversion,
                             height=40, font=("Segoe UI", 14, "bold"))
-# ⭐ Adjusted pady to account for the removed preview
 convert_btn.pack(pady=(15, 10), fill="x", padx=30) 
 
 # --- Output Area ---
@@ -404,8 +398,33 @@ return_btn = ctk.CTkButton(frame, text="Return to Hub", command=return_to_hub)
 save_btn.pack(pady=(0, 10), anchor="e", padx=30)
 return_btn.pack(pady=(0, 10), anchor="e", padx=30)
 
-# --- Footer ---
-ctk.CTkLabel(frame, text=f"v{VERSION}, © Nova Foundry 2025", font=("Segoe UI", 10), text_color="gray").pack(pady=(0, 10))
+# --- HYPERLINK SETUP ---
+LINK_URL = "https://buymeacoffee.com/novafoundry"
+
+def open_link(event):
+    # This function uses the imported `webbrowser` module from earlier
+    webbrowser.open_new_tab(LINK_URL)
+
+bottom_frame = ctk.CTkFrame(frame, fg_color="transparent")
+bottom_frame.pack(pady=(0, 10))
+
+ctk.CTkLabel(
+    bottom_frame, 
+    text=f"v1.0.0, © Nova Foundry 2025, ", 
+    font=("Segoe UI", 10), 
+    text_color="gray"
+).pack(side=tk.LEFT, padx=(0, 0))
+
+link_label = ctk.CTkLabel(
+    bottom_frame, 
+    text="Support Nova Foundry", # The text you want to display for the link
+    font=("Segoe UI", 10, "underline"), # Added 'underline' for link appearance
+    text_color="#90caf9", # A light blue color for links
+    cursor="hand2" # Changes the mouse cursor on hover
+)
+link_label.pack(side=tk.LEFT, padx=(0, 0))
+
+link_label.bind("<Button-1>", open_link)
 
 # Run initial conversion after widgets are set up
 app.after(100, initial_conversion_if_default_exists) 

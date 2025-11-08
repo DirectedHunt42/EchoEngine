@@ -1908,6 +1908,11 @@ def setup_main_ui():
                                  text_color="#1E90FF", cursor="hand2", justify="left", wraplength=screen_w-100)
     license_link.pack(pady=(0,20), padx=10)
     license_link.bind("<Button-1>", lambda e: webbrowser.open("https://creativecommons.org/licenses/by-nd/4.0/"))
+    sponsor_link = ctk.CTkLabel(about_container,text="Support Nova Foundry",
+                                 font=(custom_font_family,14,"underline"),
+                                 text_color="#1E90FF", cursor="hand2", justify="left", wraplength=screen_w-100)
+    sponsor_link.pack(pady=(0,20), padx=10)
+    sponsor_link.bind("<Button-1>", lambda e: webbrowser.open("https://buymeacoffee.com/novafoundry"))
     # ========================= Help Tab Content (in-tab controls) =========================
     help_container = ctk.CTkScrollableFrame(help_tab, fg_color="#222222", corner_radius=10)
     help_container.pack(expand=True, fill="both", padx=20, pady=20)
