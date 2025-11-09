@@ -1,6 +1,6 @@
 # Jack Murray
 # Nova Foundry / Echo Hub
-# v1.2.1
+# v1.3.0
 
 import os
 import sys
@@ -23,7 +23,7 @@ EXPORT_SOURCE = r"Working_game"
 DEFAULT_WIDTH = 600
 DEFAULT_HEIGHT = 750
 PROGRESS_AREA_HEIGHT = 70
-VERSION = "2.5.1"
+VERSION = "2.6"
 GITURL = "https://github.com/DirectedHunt42/EchoEngine"
 ASCII_ART_GENERATOR_PATH = r"Ascii_generator.exe"
 WINDOWS_UPDATE_ASSET = "Echo_Editor_Setup.exe"
@@ -519,7 +519,7 @@ bottom_frame.pack(pady=(0, 10))
 
 ctk.CTkLabel(
     bottom_frame, 
-    text=f"v1.2.1, © Nova Foundry 2025, Git Release: {VERSION}, ", 
+    text=f"v1.3.0, © Nova Foundry 2025, Git Release: {VERSION}, ", 
     font=("Segoe UI", 10), 
     text_color="gray"
 ).pack(side=tk.LEFT, padx=(0, 0))
