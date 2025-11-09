@@ -2,5 +2,5 @@ Engine_base/jdk-21.0.3.9-hotspot/** filter=lfs diff=lfs merge=lfs -text
 Engine_base/EchoEngine.jar filter=lfs diff=lfs merge=lfs -text
 Engine_editor/Docs/LICENSE/Extras/Echoes[[:space:]]of[[:space:]]the[[:space:]]Void[[:space:]]Installer.exe filter=lfs diff=lfs merge=lfs -text
 Engine_editor/Echo_editor.exe filter=lfs diff=lfs merge=lfs -text
-Engine_base/Engine_base.exe filter=lfs diff=lfs merge=lfs -text
 Engine_editor/Echo_editor filter=lfs diff=lfs merge=lfs -text
+Engine_base/Engine_base.exe filter=lfs diff=lfs merge=lfs -text
