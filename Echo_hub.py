@@ -15,6 +15,7 @@ from PIL import Image
 import urllib.request
 import json
 import tkinter as tk
+import platform
 
 # ---------- CONFIG ----------
 IMPORT_DESTINATION = r"Working_game"
@@ -25,6 +26,10 @@ PROGRESS_AREA_HEIGHT = 70
 VERSION = "2.5.1"
 GITURL = "https://github.com/DirectedHunt42/EchoEngine"
 ASCII_ART_GENERATOR_PATH = r"Ascii_generator.exe"
+WINDOWS_UPDATE_ASSET = "Echo_Editor_Setup.exe"
+UBUNTU_UPDATE_ASSET = "Echo_Editor_Setup_ubuntu.deb"
+OTHER_LINUX_UPDATE_ASSET = "Echo_Editor_Setup_linux.sh"
+DARWIN_UPDATE_ASSET = "Echo_Editor_Setup_mac.dmg"
 
 # ---------- Helper Functions ----------
 def show_custom_message(title, message, is_error=False):
@@ -347,16 +352,40 @@ def do_update_confirm(data):
         pass
 
 def download_and_install(data):
+    os_name = platform.system().lower()
+    asset_name = None
+    run_command = None
+    needs_chmod = False
+
+    if os_name == 'windows':
+        asset_name = WINDOWS_UPDATE_ASSET
+        run_command = [setup_file]
+    elif os_name == 'darwin':
+        asset_name = DARWIN_UPDATE_ASSET
+        run_command = ['open', setup_file]
+    elif os_name == 'linux':
+        if shutil.which('dpkg'):
+            asset_name = UBUNTU_UPDATE_ASSET
+            run_command = ['xdg-open', setup_file]  # Opens .deb with installer
+        else:
+            asset_name = OTHER_LINUX_UPDATE_ASSET
+            run_command = ['sh', setup_file]
+            needs_chmod = True
+    else:
+        show_custom_message("Error", "Unsupported operating system.", is_error=True)
+        return
+
     assets = data.get('assets', [])
     download_url = None
     for asset in assets:
-        if asset['name'] == "Echo_Editor_Setup.exe":
+        if asset['name'] == asset_name:
             download_url = asset['browser_download_url']
             break
     if not download_url:
-        show_custom_message("Error", "Update file not found.", is_error=True)
+        show_custom_message("Error", f"Update file '{asset_name}' not found for your OS.", is_error=True)
         return
-    setup_file = os.path.join(os.path.dirname(sys.argv[0]), "Echo_Editor_Setup.exe")
+
+    setup_file = os.path.join(os.path.dirname(sys.argv[0]), asset_name)
     for btn in (copy_btn, import_btn, export_btn, open_btn, clear_btn):
         btn.configure(state='disabled')
     status_label.configure(text="Downloading update...")
@@ -373,9 +402,11 @@ def download_and_install(data):
                 app.after(0, file_status_label.configure(text=f"Downloading ({mb_done:.2f}/{mb_total:.2f} MB)"))
                 app.after(0, lambda p=progress: progress_bar.set(p))
             urllib.request.urlretrieve(download_url, setup_file, reporthook)
+            if needs_chmod:
+                os.chmod(setup_file, 0o755)
             app.after(0, hide_progress_indicators)
             app.after(0, lambda: show_custom_message("Update Ready", "Update downloaded. Installing..."))
-            subprocess.Popen([setup_file])
+            subprocess.Popen(run_command)
             app.after(100, app.destroy)
         except Exception as e:
             app.after(0, hide_progress_indicators)
