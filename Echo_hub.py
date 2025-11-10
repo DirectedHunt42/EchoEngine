@@ -454,7 +454,7 @@ app.resizable(False, True)  # width fixed, height adjustable
 app.minsize(DEFAULT_WIDTH, DEFAULT_HEIGHT)
 
 # Icon
-icon_path = r"Engine_editor\Icons\Echo_hub.ico"
+icon_path = os.path.join("Engine_editor", "Icons", "Echo_hub.ico")
 if os.path.exists(icon_path):
     try:
         app.iconbitmap(icon_path)
@@ -518,7 +518,7 @@ status_label.pack(pady=(0, 2))
 progress_bar = ctk.CTkProgressBar(progress_frame, height=15)
 file_status_label = ctk.CTkLabel(progress_frame, text="", font=("Segoe UI", 10), text_color="gray")
 
-bottom_logo_path = r"Engine_editor\Icons\Nova_foundry\Nova_foundry_wide_transparent.png"
+bottom_logo_path = os.path.join("Engine_editor", "Icons", "Nova_foundry", "Nova_foundry_wide_transparent.png")
 logo_ctk = load_resized_image(bottom_logo_path, max_size=128)
 if logo_ctk:
     progress_frame.pack(pady=10, fill="x")
