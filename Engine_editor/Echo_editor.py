@@ -1,6 +1,6 @@
 # Jack Murray
 # Nova Foundry / Echo Editor
-# v1.3.0
+# v1.4.0
 import customtkinter as ctk
 from CTkMessagebox import CTkMessagebox
 from PIL import Image, ImageTk
@@ -13,6 +13,7 @@ import traceback
 from tkinter import font as tkFont, filedialog, Toplevel, Label
 from collections import deque
 import sys
+import platform
 try:
     # Lightweight HTML renderer for Tkinter; used to embed help pages in the Help tab
     from tkinterweb import HtmlFrame
@@ -26,10 +27,8 @@ try:
     WEBVIEW_KIND = 'cef'
 except Exception:
     cef = None
-
 # Base path for static resources (bundled in _MEIPASS for EXE, script dir otherwise)
 resource_base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
-
 # Base path for saving/loading dynamic files (EXE dir for bundled, script dir otherwise)
 save_base_path = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(os.path.abspath(__file__))
 # ---------------- Help resources (assumptions)
@@ -37,6 +36,11 @@ save_base_path = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False
 HELP_URL = "https://github.com/DirectedHunt42/EchoEngine/wiki"
 # Default help PDF path relative to resource_base_path. If not present, user will be prompted to pick one.
 HELP_PDF_DEFAULT = os.path.join(resource_base_path, "Docs", "Help", "Help.pdf")
+
+os_name = platform.system().lower()
+HUB_PATH = "Echo_hub.exe" if os_name == "windows" else "Echo_hub"
+RUNNER_PATH = "../Working_game/Echo_runner.exe" if os_name == "windows" else "../Working_game/Echo_runner"
+
 # ========================= Tooltip Helper =========================
 class ToolTip:
     def __init__(self, widget, text):
@@ -229,7 +233,7 @@ def setup_main_ui():
         err_text_lbl = ctk.CTkLabel(container, text="", font=(custom_font_family,10), text_color="red")
         err_text_lbl.pack(fill="x", pady=(2,0), padx=(35,0))
         def toggle(var1,var2):
-            if var1.get() == 1: var2.set(0)
+            if var1.get() == 1 == 1: var2.set(0)
         path_chk.configure(command=lambda: toggle(path_var,text_var))
         text_chk.configure(command=lambda: toggle(text_var,path_var))
         def validate_path(entry_widget, label_widget, valid_ext=None, field_name=None):
@@ -322,7 +326,7 @@ def setup_main_ui():
                 else:
                     # For all other file types, just check if the file exists
                     should_highlight = True
-               
+              
                 if should_highlight:
                     try:
                         # Handle standard text entry fields
@@ -340,22 +344,22 @@ def setup_main_ui():
                         # Handle the complex text-or-path widgets
                         elif isinstance(widget, tuple) and len(widget) == 6:
                             path_entry, textbox, path_var, text_var, _, _ = widget
-                           
+                          
                             # Read content from the text file
                             with open(full_path, 'r', encoding='utf-8') as f:
                                 content = f.read()
-                           
+                          
                             # Set to 'text' mode and load content into the textbox
                             text_var.set(1)
                             path_var.set(0)
                             textbox.delete("1.0", "end")
                             textbox.insert("1.0", content)
-                           
+                          
                             # Set the background to green
                             textbox.configure(fg_color=LOADED_COLOR)
                             # Reset the path field color
                             path_entry.configure(fg_color="#444444")
-                           
+                          
                     except Exception as e:
                         print(f"Error reading {key} file: {e}")
                 else:
@@ -396,15 +400,15 @@ def setup_main_ui():
                     if not value:
                         errors.append(f"{key} is required.")
                         continue
-                   
+                  
                     # Check for "double commas" or commas at start/end
                     if ",," in value or value.startswith(',') or value.endswith(','):
                         errors.append(f"{key}: Invalid format. Avoid adjacent commas.")
                         continue
-                   
+                  
                     # Split by comma and clean up spaces
                     coords = [c.strip() for c in value.split(',')]
-                   
+                  
                     # Check if there are exactly 3 parts and all are numbers
                     if len(coords) != 3 or not all(c.lstrip('-').isdigit() for c in coords):
                         errors.append(f"{key}: Must have exactly three numbers (e.g., X,Y,Z).")
@@ -636,7 +640,7 @@ def setup_main_ui():
         plus_buttons = {}
         # Info display on the right side of the editor
         info_display_frame = None
-       
+      
         # --- CONSTANT FOR BACKGROUND/ROOM COLOR ---
         BACKGROUND_COLOR = "#333333"
         current_room = [None, None]
@@ -704,10 +708,10 @@ def setup_main_ui():
                 return
             clear_info_display_frame_tutorial()
             current_room[:] = [grid_x, grid_y]
-           
+          
             if not grid_state:
                 return
-                   
+                  
             cell = grid_state[grid_y][grid_x]
             if cell is None:
                 return
@@ -853,11 +857,11 @@ def setup_main_ui():
                 except Exception:
                     pass
             plus_buttons.clear()
-           
-            if not is_add_mode[0]:  # Remove Mode
+          
+            if not is_add_mode[0]: # Remove Mode
                 show_all_remove_buttons_tutorial()
                 return
-           
+          
             # Add Mode: Show green "+" buttons around existing rooms
             directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
             for y in range(GRID_DIM_Y):
@@ -910,19 +914,19 @@ def setup_main_ui():
         # UI layout
         main_frame = ctk.CTkFrame(parent_tab, fg_color="#2b2b2b")
         main_frame.pack(fill="both", expand=True, padx=20, pady=(20, 60))
-       
+      
         # NEW: Add toggle button above grid
         toggle_button = ctk.CTkButton(main_frame, text="Remove Mode", font=(custom_font_family, 14),
                                     fg_color="#444444", hover_color="#666666",
                                     command=toggle_mode_tutorial)
         toggle_button.pack(anchor="ne", padx=10, pady=(0, 5))
-       
+      
         info_display_frame = ctk.CTkFrame(main_frame, fg_color="transparent", width=300)
         info_display_frame.pack(side="right", fill="y", padx=(10, 0), pady=10)
-       
+      
         grid_container = ctk.CTkFrame(main_frame, fg_color="transparent")
         grid_container.pack(side="left", fill="both", expand=True, padx=(0, 10), pady=10)
-       
+      
         grid_canvas = ctk.CTkCanvas(grid_container, bg=BACKGROUND_COLOR, highlightthickness=0)
         grid_canvas.pack(fill="both", expand=True)
         grid_container.bind("<Configure>", setup_grid_tutorial)
@@ -1362,7 +1366,7 @@ def setup_main_ui():
         def start_drag(event, floor_idx):
             drag_data["start_y"] = event.y_root
             drag_data["source_idx"] = floor_idx
-           
+          
         def handle_drag(event, floor_idx):
             if drag_data["source_idx"] is None:
                 return
@@ -1465,11 +1469,11 @@ def setup_main_ui():
                 except Exception:
                     pass
             plus_buttons.clear()
-           
-            if not is_add_mode[0]:  # Remove Mode
+          
+            if not is_add_mode[0]: # Remove Mode
                 show_all_remove_buttons_main()
                 return
-           
+          
             # Add Mode
             # Add based on floor below
             floor_below_idx = current_floor[0] - 1
@@ -1763,23 +1767,31 @@ def setup_main_ui():
     previous_tab = [tab_view.get()] # store previous tab in a mutable container
     def return_to_hub():
         try:
+            global HUB_PATH
             script_dir = save_base_path
             parent_dir = os.path.abspath(os.path.join(script_dir,".."))
-            exe_path = os.path.join(parent_dir,"Echo_hub.exe")
+            exe_path = os.path.join(parent_dir, HUB_PATH)
             # Launch the hub with its own directory as the working directory so
             # relative file paths inside the launched EXE resolve correctly.
+            if not os.path.exists(exe_path):
+                CTkMessagebox(title="Error", message=f"Hub not found at:\n{exe_path}", icon="cancel")
+                return
             subprocess.Popen([exe_path], cwd=os.path.dirname(exe_path))
             app.destroy()
         except Exception as e:
             CTkMessagebox(title="Error", message=f"Failed to launch Hub:\n{e}", icon="cancel")
     def launch_test_app():
         try:
+            global RUNNER_PATH
             script_dir = save_base_path
             # The test app is inside the Working_game directory now
-            exe_path = os.path.join(script_dir,"../Working_game/Echo_runner.exe")
+            exe_path = os.path.join(script_dir, RUNNER_PATH)
             # Ensure the launched runner's current working directory is the
             # runner's folder. Many apps use relative paths internally; if
             # launched from a different cwd they fail to find files.
+            if not os.path.exists(exe_path):
+                CTkMessagebox(title="Error", message=f"Runner not found at:\n{exe_path}", icon="cancel")
+                return
             subprocess.Popen([exe_path], cwd=os.path.dirname(exe_path))
         except Exception as e:
             CTkMessagebox(title="Error", message=f"Failed to launch Test App:\n{e}", icon="cancel")
@@ -1794,10 +1806,16 @@ def setup_main_ui():
                     return
                 path_to_open = selected
             # On Windows this will open the file with the associated application
-            os.startfile(path_to_open)
+            if os_name == 'windows':
+                os.startfile(path_to_open)
+            elif os_name == 'darwin':
+                subprocess.call(['open', path_to_open])
+            elif os_name == 'linux':
+                subprocess.call(['xdg-open', path_to_open])
+            else:
+                CTkMessagebox(title="Error", message="Unsupported operating system.", icon="cancel")
         except Exception as e:
             CTkMessagebox(title="Error", message=f"Failed to open Help PDF:\n{e}", icon="cancel")
-
     # Note: We intentionally do NOT create a separate Toplevel help window. The Help tab contains the in-app help UI.
     def on_tab_change():
         current_tab = tab_view.get()
@@ -1889,7 +1907,7 @@ def setup_main_ui():
     echo_path = os.path.join(base_path, "Icons", "Echo_engine", "Echo_engine_transparent.png")
     display_image_scaled(nova_path, about_container, scale=0.2)
     display_image_scaled(echo_path, about_container, scale=0.2)
-    version_label = ctk.CTkLabel(about_container,text="Echo Editor v1.3.0",font=(custom_font_family,16))
+    version_label = ctk.CTkLabel(about_container,text="Echo Editor v1.4.0",font=(custom_font_family,16))
     version_label.pack(pady=(10,20))
     license_text = (
         "© Nova Foundry 2025. All rights reserved.\n\n"
@@ -1916,10 +1934,8 @@ def setup_main_ui():
     # ========================= Help Tab Content (in-tab controls) =========================
     help_container = ctk.CTkScrollableFrame(help_tab, fg_color="#222222", corner_radius=10)
     help_container.pack(expand=True, fill="both", padx=20, pady=20)
-
     help_header = ctk.CTkLabel(help_container, text="Online Help", font=(custom_font_family, 18, "bold"))
     help_header.pack(pady=(10,5), anchor="w", padx=10)
-
     # Embed the help webpage inside the tab when possible (tkinterweb HtmlFrame).
     # Prefer CEF (Chromium) embed if available for modern web pages
     if WEBVIEW_KIND == 'cef' and cef is not None:
@@ -1929,9 +1945,7 @@ def setup_main_ui():
         # Create a plain tk.Frame to get a native window handle
         cef_host = tk.Frame(cef_host_frame, bg="#1e1e1e")
         cef_host.pack(fill="both", expand=True)
-
         cef_browser_state = {"browser": None, "initialized": False, "started_loop": False}
-
         def _cef_initialize():
             if not cef_browser_state["initialized"]:
                 settings = {}
@@ -1940,7 +1954,6 @@ def setup_main_ui():
                 except Exception:
                     pass
                 cef_browser_state["initialized"] = True
-
         def _create_cef_browser():
             try:
                 _cef_initialize()
@@ -1964,14 +1977,11 @@ def setup_main_ui():
                     webbrowser.open_new(HELP_URL)
                 except Exception:
                     pass
-
         # Create the browser when the host frame is realized (has an id and shown)
         def _on_host_configure(event=None):
             if cef_browser_state["browser"] is None:
                 _create_cef_browser()
-
         cef_host.bind("<Configure>", _on_host_configure)
-
         # Ensure clean shutdown when the main app closes
         def _shutdown_cef():
             try:
@@ -1987,7 +1997,6 @@ def setup_main_ui():
                         pass
             except Exception:
                 pass
-
         # Register shutdown handler
         try:
             app.protocol("WM_DELETE_WINDOW", lambda: (_shutdown_cef(), app.destroy()))
@@ -2002,7 +2011,6 @@ def setup_main_ui():
         url_label.bind("<Button-1>", lambda e: webbrowser.open_new(HELP_URL))
         open_browser_inline = ctk.CTkButton(faux_frame, text="Open in Browser", fg_color="#2638DB", hover_color="#321FDD", command=lambda: webbrowser.open_new(HELP_URL))
         open_browser_inline.pack(padx=10, pady=(0,10), anchor="w")
-
     # Button below the 'window' to open the help PDF
     open_pdf_tab_btn = ctk.CTkButton(help_container, text="Open Help PDF", font=(custom_font_family, 14),
                                      fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black",

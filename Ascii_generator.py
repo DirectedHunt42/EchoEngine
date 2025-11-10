@@ -1,6 +1,6 @@
 # Jack Murray
 # Nova Foundry / ASCII Art Converter
-# v1.0.0
+# v1.1.0
 
 import os
 import subprocess
@@ -10,12 +10,11 @@ import customtkinter as ctk
 from tkinter import filedialog
 from PIL import Image, ImageEnhance
 import tkinter as tk
+import platform
 
 # ---------- CONFIG ----------
 DEFAULT_WIDTH = 700
 DEFAULT_HEIGHT = 1000
-# Removed PREVIEW_MAX_WIDTH and PREVIEW_MAX_HEIGHT
-VERSION = "1.0.0"
 
 # --- ❗ UPDATE THESE PATHS ---
 # Add the path to your default preview image (e.g., r"C:\MyImages\default.png")
@@ -31,6 +30,10 @@ ASCII_STYLES = {
     "Complex": "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "[::-1],
     "Simple": " .:-=+*#%@",
 }
+
+os_name = platform.system().lower()
+HUB_PATH = "Echo_hub.exe" if os_name == "windows" else "Echo_hub"
+
 # ---------- Helper Functions ----------
 
 def show_custom_message(title, message, is_error=False):
@@ -233,8 +236,12 @@ def save_art():
             show_custom_message("Save Error", f"Failed to save file:\n{e}", is_error=True)
 
 def return_to_hub():
+    global HUB_PATH
+    if not os.path.exists(HUB_PATH):
+        show_custom_message("Error", f"Hub not found at:\n{HUB_PATH}", is_error=True)
+        return
     try:
-        subprocess.Popen("Echo_hub.exe")
+        subprocess.Popen(HUB_PATH)
         app.destroy()
     except Exception as e:
         show_custom_message("Error", str(e), is_error=True)
@@ -410,7 +417,7 @@ bottom_frame.pack(pady=(0, 10))
 
 ctk.CTkLabel(
     bottom_frame, 
-    text=f"v1.0.0, © Nova Foundry 2025, ", 
+    text=f"v1.1.0, © Nova Foundry 2025, ", 
     font=("Segoe UI", 10), 
     text_color="gray"
 ).pack(side=tk.LEFT, padx=(0, 0))
