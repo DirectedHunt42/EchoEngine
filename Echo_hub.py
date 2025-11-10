@@ -1,6 +1,6 @@
 # Jack Murray
 # Nova Foundry / Echo Hub
-# v1.3.0
+# v1.4.0
 
 import os
 import sys
@@ -23,13 +23,17 @@ EXPORT_SOURCE = r"Working_game"
 DEFAULT_WIDTH = 600
 DEFAULT_HEIGHT = 750
 PROGRESS_AREA_HEIGHT = 70
-VERSION = "2.6"
+VERSION = "3"
 GITURL = "https://github.com/DirectedHunt42/EchoEngine"
-ASCII_ART_GENERATOR_PATH = r"Ascii_generator.exe"
 WINDOWS_UPDATE_ASSET = "Echo_Editor_Setup.exe"
 UBUNTU_UPDATE_ASSET = "Echo_Editor_Setup_ubuntu.deb"
 OTHER_LINUX_UPDATE_ASSET = "Echo_Editor_Setup_linux.sh"
 DARWIN_UPDATE_ASSET = "Echo_Editor_Setup_mac.dmg"
+
+os_name = platform.system().lower()
+ASCII_ART_GENERATOR_PATH = "Ascii_generator.exe" if os_name == "windows" else "Ascii_generator"
+EDITOR_PATH = "Engine_editor/Echo_editor.exe" if os_name == "windows" else "Engine_editor/Echo_editor"
+ENGINE_BASE_PROCESS = "Engine_base.exe" if os_name == "windows" else "Engine_base"
 
 # ---------- Helper Functions ----------
 def show_custom_message(title, message, is_error=False):
@@ -104,12 +108,21 @@ def get_game_title():
     return "No Project Loaded"
 
 def close_engine_processes():
-    while subprocess.run(['tasklist'], capture_output=True, text=True).stdout.find('Engine_base.exe') != -1:
-        try:
-            subprocess.run(['taskkill', '/F', '/IM', 'Engine_base.exe'], 
-                        capture_output=True, check=False)
-        except Exception:
-            pass
+    global os_name, ENGINE_BASE_PROCESS
+    while True:
+        if os_name == 'windows':
+            output = subprocess.run(['tasklist'], capture_output=True, text=True).stdout
+            if ENGINE_BASE_PROCESS not in output:
+                break
+            subprocess.run(['taskkill', '/F', '/IM', ENGINE_BASE_PROCESS], capture_output=True, check=False)
+        else:  # Linux or Darwin (Mac)
+            try:
+                pid_output = subprocess.check_output(['pgrep', '-f', ENGINE_BASE_PROCESS]).decode().strip()
+                if not pid_output:
+                    break
+                subprocess.run(['pkill', '-f', ENGINE_BASE_PROCESS], check=False)
+            except subprocess.CalledProcessError:
+                break  # pgrep returns non-zero if no process found
 
 # ---------- Progress Bar Logic ----------
 def show_progress_indicators():
@@ -304,13 +317,18 @@ def export_zip():
     threading.Thread(target=export_task, daemon=True).start()
 
 def open_project():
+    global EDITOR_PATH
+    if not os.path.exists(EDITOR_PATH):
+        show_custom_message("Error", f"Editor not found at:\n{EDITOR_PATH}", is_error=True)
+        return
     try:
-        subprocess.Popen("Engine_editor/Echo_editor.exe")
+        subprocess.Popen(EDITOR_PATH)
         app.destroy()
     except Exception as e:
         show_custom_message("Error", str(e), is_error=True)
 
 def open_ascii_generator():
+    global ASCII_ART_GENERATOR_PATH
     if not os.path.exists(ASCII_ART_GENERATOR_PATH):
         show_custom_message("Error", f"ASCII Art Generator not found at:\n{ASCII_ART_GENERATOR_PATH}", is_error=True)
         return
@@ -352,7 +370,7 @@ def do_update_confirm(data):
         pass
 
 def download_and_install(data):
-    os_name = platform.system().lower()
+    global os_name
     asset_name = None
     run_command = None
     needs_chmod = False
@@ -519,7 +537,7 @@ bottom_frame.pack(pady=(0, 10))
 
 ctk.CTkLabel(
     bottom_frame, 
-    text=f"v1.3.0, © Nova Foundry 2025, Git Release: {VERSION}, ", 
+    text=f"v1.4.0, © Nova Foundry 2025, Git Release: {VERSION}, ", 
     font=("Segoe UI", 10), 
     text_color="gray"
 ).pack(side=tk.LEFT, padx=(0, 0))
