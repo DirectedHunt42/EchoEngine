@@ -604,16 +604,16 @@ def setup_main_ui():
                         textbox.configure(fg_color="#444444")
                         err_text_lbl.configure(text="")
             if errors:
-                CTkMessagebox(title="Validation Error", message="\n".join(errors), icon="cancel")
+                show_msg("Validation Error", "\n".join(errors), icon="cancel")
             else:
                 # On successful save, update the colors to green
                 load_and_highlight_existing()
-                CTkMessagebox(title="Success", message="All fields validated and saved!", icon="check")
+                show_msg("Success", "All fields validated and saved!", icon="check")
         except Exception as e:
             # Surface any unexpected exceptions so they are not silent
             print("[Echo Editor] Unexpected error in save_game_setup:")
             traceback.print_exc()
-            CTkMessagebox(title="Error", message=f"Unexpected error during save:\n{e}", icon="cancel")
+            show_msg("Error", f"Unexpected error during save:\n{e}", icon="cancel")
     # ========================= Load existing data on startup =========================
     load_and_highlight_existing()
     # ========================= Save Button =========================
@@ -985,7 +985,7 @@ def setup_main_ui():
             load_tutorial_data()
             if current_room[0] is not None:
                 display_room_details_tutorial(current_room[0], current_room[1])
-            CTkMessagebox(title="Success", message="Tutorial floors saved!", icon="check")
+            show_msg("Success", "Tutorial floors saved!", icon="check")
         def load_tutorial_data():
             nonlocal grid_state
             script_dir = save_base_path
@@ -1390,6 +1390,7 @@ def setup_main_ui():
             floor_to_move = floors_list.pop(old_idx)
             floors_list.insert(new_idx, floor_to_move)
             floors.clear()
+            new_floors = {}
             for new_idx_key, (_, data) in enumerate(floors_list):
                 new_floors[new_idx_key] = data
             floors.update(new_floors)
@@ -1671,7 +1672,7 @@ def setup_main_ui():
             load_main_level_data()
             if current_room[0] is not None:
                 display_room_details_main(current_room[0], current_room[1])
-            CTkMessagebox(title="Success", message="Main levels saved!", icon="check")
+            show_msg("Success", "Main levels saved!", icon="check")
         def load_main_level_data():
             script_dir = save_base_path
             main_dir = os.path.join(script_dir, "..", "Working_game", "Text", "Room_descriptions", "Main")
@@ -1773,12 +1774,14 @@ def setup_main_ui():
             # Launch the hub with its own directory as the working directory so
             # relative file paths inside the launched EXE resolve correctly.
             if not os.path.exists(exe_path):
-                CTkMessagebox(title="Error", message=f"Hub not found at:\n{exe_path}", icon="cancel")
+                show_msg("Error", f"Hub not found at:\n{exe_path}", icon="cancel")
                 return
+            if os_name != 'windows':
+                os.chmod(exe_path, 0o755)
             subprocess.Popen([exe_path], cwd=os.path.dirname(exe_path))
             app.destroy()
         except Exception as e:
-            CTkMessagebox(title="Error", message=f"Failed to launch Hub:\n{e}", icon="cancel")
+            show_msg("Error", f"Failed to launch Hub:\n{e}", icon="cancel")
     def launch_test_app():
         try:
             global RUNNER_PATH
@@ -1789,11 +1792,13 @@ def setup_main_ui():
             # runner's folder. Many apps use relative paths internally; if
             # launched from a different cwd they fail to find files.
             if not os.path.exists(exe_path):
-                CTkMessagebox(title="Error", message=f"Runner not found at:\n{exe_path}", icon="cancel")
+                show_msg("Error", f"Runner not found at:\n{exe_path}", icon="cancel")
                 return
+            if os_name != 'windows':
+                os.chmod(exe_path, 0o755)
             subprocess.Popen([exe_path], cwd=os.path.dirname(exe_path))
         except Exception as e:
-            CTkMessagebox(title="Error", message=f"Failed to launch Test App:\n{e}", icon="cancel")
+            show_msg("Error", f"Failed to launch Test App:\n{e}", icon="cancel")
     # ---------------- Help helpers ----------------
     def open_help_pdf(pdf_path=None):
         # Try default path first, otherwise ask user to pick a PDF
@@ -1812,9 +1817,9 @@ def setup_main_ui():
             elif os_name == 'linux':
                 subprocess.call(['xdg-open', path_to_open])
             else:
-                CTkMessagebox(title="Error", message="Unsupported operating system.", icon="cancel")
+                show_msg("Error", "Unsupported operating system.", icon="cancel")
         except Exception as e:
-            CTkMessagebox(title="Error", message=f"Failed to open Help PDF:\n{e}", icon="cancel")
+            show_msg("Error", f"Failed to open Help PDF:\n{e}", icon="cancel")
     # Note: We intentionally do NOT create a separate Toplevel help window. The Help tab contains the in-app help UI.
     def on_tab_change():
         current_tab = tab_view.get()
@@ -1895,12 +1900,12 @@ def setup_main_ui():
     def export_game():
         export_path = export_path_entry.get().strip()
         if not export_path:
-            CTkMessagebox(title="Error", message="Please specify an export path.", icon="cancel")
+            show_msg("Error", "Please specify an export path.", icon="cancel")
             return
         platform_choice = platform_combo.get()
         errors = validate_game_setup() + check_tutorial() + check_main()
         if errors:
-            CTkMessagebox(title="Validation Error", message="\n".join(errors), icon="cancel")
+            show_msg("Validation Error", "\n".join(errors), icon="cancel")
             return
         save_game_setup()
         save_tutorial()
@@ -1909,7 +1914,7 @@ def setup_main_ui():
             script_dir = save_base_path
             working_game_dir = os.path.join(script_dir, "..", "Working_game")
             if not os.path.exists(working_game_dir):
-                CTkMessagebox(title="Error", message="Working_game directory not found. Please save your work first.", icon="cancel")
+                show_msg("Error", "Working_game directory not found. Please save your work first.", icon="cancel")
                 return
             dest_dir = os.path.join(export_path, "Echo_Game_Export")
             if os.path.exists(dest_dir):
@@ -1924,9 +1929,9 @@ def setup_main_ui():
                 os.rename(current_runner, target_runner)
                 if platform_choice == "Linux" and os_name != "windows":
                     os.chmod(target_runner, 0o755)
-            CTkMessagebox(title="Success", message=f"Game exported successfully to:\n{dest_dir}", icon="check")
+            show_msg("Success", f"Game exported successfully to:\n{dest_dir}", icon="check")
         except Exception as e:
-            CTkMessagebox(title="Error", message=f"Failed to export game:\n{e}", icon="cancel")
+            show_msg("Error", f"Failed to export game:\n{e}", icon="cancel")
     export_button = ctk.CTkButton(export_container, text="Export Game", font=(custom_font_family, 16),
                                   fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black", command=export_game)
     export_button.pack(pady=(20,10))
@@ -2003,7 +2008,7 @@ def setup_main_ui():
                     cef_browser_state["started_loop"] = True
                     app.after(10, _cef_loop)
             except Exception as e:
-                CTkMessagebox(title="Error", message=f"Failed to embed Chromium browser: {e}\nOpening in external browser instead.", icon="warning")
+                show_msg("Error", f"Failed to embed Chromium browser: {e}\nOpening in external browser instead.", icon="warning")
                 try:
                     webbrowser.open_new(HELP_URL)
                 except Exception:
@@ -2043,12 +2048,14 @@ def setup_main_ui():
         open_browser_inline = ctk.CTkButton(faux_frame, text="Open in Browser", fg_color="#2638DB", hover_color="#321FDD", command=lambda: webbrowser.open_new(HELP_URL))
         open_browser_inline.pack(padx=10, pady=(0,10), anchor="w")
     # Add video help section
-    video_header = ctk.CTkLabel(help_container, text="Video Help", font=(custom_font_family, 18, "bold"))
+    video_help_container = ctk.CTkFrame(help_container, fg_color="#1e1e1e")
+    video_help_container.pack(fill="both", expand=False, padx=10, pady=(5,10))
+    video_header = ctk.CTkLabel(video_help_container, text="Video Help", font=(custom_font_family, 18, "bold"))
     video_header.pack(pady=(10,5), anchor="w", padx=10)
-    video_link_label = ctk.CTkLabel(help_container, text=VIDEO_HELP_URL, font=(custom_font_family, 14), text_color="#1E90FF", cursor="hand2")
+    video_link_label = ctk.CTkLabel(video_help_container, text=VIDEO_HELP_URL, font=(custom_font_family, 14), text_color="#1E90FF", cursor="hand2")
     video_link_label.pack(pady=(0,5), anchor="w", padx=10)
     video_link_label.bind("<Button-1>", lambda e: webbrowser.open_new(VIDEO_HELP_URL))
-    open_video_inline = ctk.CTkButton(help_container, text="Open Video in Browser", fg_color="#2638DB", hover_color="#321FDD", command=lambda: webbrowser.open_new(VIDEO_HELP_URL))
+    open_video_inline = ctk.CTkButton(video_help_container, text="Open Video in Browser", fg_color="#2638DB", hover_color="#321FDD", command=lambda: webbrowser.open_new(VIDEO_HELP_URL))
     open_video_inline.pack(padx=10, pady=(0,10), anchor="w")
     # Button below the 'window' to open the help PDF
     open_pdf_tab_btn = ctk.CTkButton(help_container, text="Open Help PDF", font=(custom_font_family, 14),
