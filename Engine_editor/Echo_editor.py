@@ -325,7 +325,7 @@ def setup_main_ui():
                 else:
                     # For all other file types, just check if the file exists
                     should_highlight = True
-             
+            
                 if should_highlight:
                     try:
                         # Handle standard text entry fields
@@ -343,22 +343,22 @@ def setup_main_ui():
                         # Handle the complex text-or-path widgets
                         elif isinstance(widget, tuple) and len(widget) == 6:
                             path_entry, textbox, path_var, text_var, _, _ = widget
-                         
+                        
                             # Read content from the text file
                             with open(full_path, 'r', encoding='utf-8') as f:
                                 content = f.read()
-                         
+                        
                             # Set to 'text' mode and load content into the textbox
                             text_var.set(1)
                             path_var.set(0)
                             textbox.delete("1.0", "end")
                             textbox.insert("1.0", content)
-                         
+                        
                             # Set the background to green
                             textbox.configure(fg_color=LOADED_COLOR)
                             # Reset the path field color
                             path_entry.configure(fg_color="#444444")
-                         
+                        
                     except Exception as e:
                         print(f"Error reading {key} file: {e}")
                 else:
@@ -710,7 +710,7 @@ def setup_main_ui():
          
             if not grid_state:
                 return
-                 
+                
             cell = grid_state[grid_y][grid_x]
             if cell is None:
                 return
@@ -856,11 +856,11 @@ def setup_main_ui():
                 except Exception:
                     pass
             plus_buttons.clear()
-         
+        
             if not is_add_mode[0]: # Remove Mode
                 show_all_remove_buttons_tutorial()
                 return
-         
+        
             # Add Mode: Show green "+" buttons around existing rooms
             directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
             for y in range(GRID_DIM_Y):
@@ -912,19 +912,19 @@ def setup_main_ui():
         # UI layout
         main_frame = ctk.CTkFrame(parent_tab, fg_color="#2b2b2b")
         main_frame.pack(fill="both", expand=True, padx=20, pady=(20, 60))
-     
+    
         # NEW: Add toggle button above grid
         toggle_button = ctk.CTkButton(main_frame, text="Remove Mode", font=(custom_font_family, 14),
                                     fg_color="#444444", hover_color="#666666",
                                     command=toggle_mode_tutorial)
         toggle_button.pack(anchor="ne", padx=10, pady=(0, 5))
-     
+    
         info_display_frame = ctk.CTkFrame(main_frame, fg_color="transparent", width=300)
         info_display_frame.pack(side="right", fill="y", padx=(10, 0), pady=10)
-     
+    
         grid_container = ctk.CTkFrame(main_frame, fg_color="transparent")
         grid_container.pack(side="left", fill="both", expand=True, padx=(0, 10), pady=10)
-     
+    
         grid_canvas = ctk.CTkCanvas(grid_container, bg=BACKGROUND_COLOR, highlightthickness=0)
         grid_canvas.pack(fill="both", expand=True)
         grid_container.bind("<Configure>", setup_grid_tutorial)
@@ -985,7 +985,7 @@ def setup_main_ui():
             load_tutorial_data()
             if current_room[0] is not None:
                 display_room_details_tutorial(current_room[0], current_room[1])
-            show_msg("Success", "Tutorial floors saved!", icon="check")
+            CTkMessagebox(title="Success", message="Tutorial floors saved!", icon="check")
         def load_tutorial_data():
             nonlocal grid_state
             script_dir = save_base_path
@@ -1469,11 +1469,11 @@ def setup_main_ui():
                 except Exception:
                     pass
             plus_buttons.clear()
-         
+        
             if not is_add_mode[0]: # Remove Mode
                 show_all_remove_buttons_main()
                 return
-         
+        
             # Add Mode
             # Add based on floor below
             floor_below_idx = current_floor[0] - 1
@@ -1672,7 +1672,7 @@ def setup_main_ui():
             load_main_level_data()
             if current_room[0] is not None:
                 display_room_details_main(current_room[0], current_room[1])
-            show_msg("Success", "Main levels saved!", icon="check")
+            CTkMessagebox(title="Success", message="Main levels saved!", icon="check")
         def load_main_level_data():
             script_dir = save_base_path
             main_dir = os.path.join(script_dir, "..", "Working_game", "Text", "Room_descriptions", "Main")
@@ -1900,12 +1900,12 @@ def setup_main_ui():
     def export_game():
         export_path = export_path_entry.get().strip()
         if not export_path:
-            show_msg("Error", "Please specify an export path.", icon="cancel")
+            CTkMessagebox(title="Error", message="Please specify an export path.", icon="cancel")
             return
         platform_choice = platform_combo.get()
         errors = validate_game_setup() + check_tutorial() + check_main()
         if errors:
-            show_msg("Validation Error", "\n".join(errors), icon="cancel")
+            CTkMessagebox(title="Validation Error", message="\n".join(errors), icon="cancel")
             return
         save_game_setup()
         save_tutorial()
@@ -1914,7 +1914,7 @@ def setup_main_ui():
             script_dir = save_base_path
             working_game_dir = os.path.join(script_dir, "..", "Working_game")
             if not os.path.exists(working_game_dir):
-                show_msg("Error", "Working_game directory not found. Please save your work first.", icon="cancel")
+                CTkMessagebox(title="Error", message="Working_game directory not found. Please save your work first.", icon="cancel")
                 return
             dest_dir = os.path.join(export_path, "Echo_Game_Export")
             if os.path.exists(dest_dir):
@@ -1929,9 +1929,9 @@ def setup_main_ui():
                 os.rename(current_runner, target_runner)
                 if platform_choice == "Linux" and os_name != "windows":
                     os.chmod(target_runner, 0o755)
-            show_msg("Success", f"Game exported successfully to:\n{dest_dir}", icon="check")
+            CTkMessagebox(title="Success", message=f"Game exported successfully to:\n{dest_dir}", icon="check")
         except Exception as e:
-            show_msg("Error", f"Failed to export game:\n{e}", icon="cancel")
+            CTkMessagebox(title="Error", message=f"Failed to export game:\n{e}", icon="cancel")
     export_button = ctk.CTkButton(export_container, text="Export Game", font=(custom_font_family, 16),
                                   fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black", command=export_game)
     export_button.pack(pady=(20,10))
@@ -2047,7 +2047,7 @@ def setup_main_ui():
         url_label.bind("<Button-1>", lambda e: webbrowser.open_new(HELP_URL))
         open_browser_inline = ctk.CTkButton(faux_frame, text="Open in Browser", fg_color="#2638DB", hover_color="#321FDD", command=lambda: webbrowser.open_new(HELP_URL))
         open_browser_inline.pack(padx=10, pady=(0,10), anchor="w")
-    # Add video help section
+   # Add video help section
     video_help_container = ctk.CTkFrame(help_container, fg_color="#1e1e1e")
     video_help_container.pack(fill="both", expand=False, padx=10, pady=(5,10))
     video_header = ctk.CTkLabel(video_help_container, text="Video Help", font=(custom_font_family, 18, "bold"))
