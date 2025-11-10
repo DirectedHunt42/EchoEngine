@@ -454,10 +454,11 @@ app.resizable(False, True)  # width fixed, height adjustable
 app.minsize(DEFAULT_WIDTH, DEFAULT_HEIGHT)
 
 # Icon
-icon_path = os.path.join("Engine_editor", "Icons", "Echo_hub.ico")
-if os.path.exists(icon_path):
+window_icon_path = os.path.join("Engine_editor", "Icons", "Echo_hub.ico") if os_name == "windows" else os.path.join("Engine_editor", "Icons", "Echo_hub.xbm")
+label_icon_path = os.path.join("Engine_editor", "Icons", "Echo_hub.ico")
+if os.path.exists(window_icon_path):
     try:
-        app.iconbitmap(icon_path)
+        app.iconbitmap(window_icon_path)
     except Exception as e:
         print(f"Could not set window icon: {e}")
 
@@ -471,7 +472,7 @@ app.geometry(f"{app.winfo_width()}x{app.winfo_height()}+{x}+{y}")
 frame = ctk.CTkFrame(app, corner_radius=15)
 frame.pack(expand=True, fill="both", padx=20, pady=20)
 
-icon_ctk = load_resized_image(icon_path)
+icon_ctk = load_resized_image(label_icon_path)
 if icon_ctk:
     ctk.CTkLabel(frame, image=icon_ctk, text="").pack(pady=(10, 5))
 
