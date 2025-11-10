@@ -42,11 +42,11 @@ def show_custom_message(title, message, is_error=False):
     dialog.geometry("320x160")
     dialog.resizable(False, False)
     dialog.transient(app)
-    dialog.grab_set()
     dialog.update_idletasks()
     x = app.winfo_x() + (app.winfo_width() // 2) - 160
     y = app.winfo_y() + (app.winfo_height() // 2) - 80
     dialog.geometry(f"320x160+{x}+{y}")
+    dialog.grab_set()
     label = ctk.CTkLabel(dialog, text=message, wraplength=280,
                          text_color="red" if is_error else "white")
     label.pack(pady=20, padx=20)
@@ -59,11 +59,11 @@ def ask_confirmation(title, message):
     dialog.geometry("360x180")
     dialog.resizable(False, False)
     dialog.transient(app)
-    dialog.grab_set()
     dialog.update_idletasks()
     x = app.winfo_x() + (app.winfo_width() // 2) - 180
     y = app.winfo_y() + (app.winfo_height() // 2) - 90
     dialog.geometry(f"360x180+{x}+{y}")
+    dialog.grab_set()
     label = ctk.CTkLabel(dialog, text=message, wraplength=320)
     label.pack(pady=20, padx=20)
     response = {"confirmed": False}
