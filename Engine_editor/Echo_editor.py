@@ -115,6 +115,8 @@ def display_image_scaled(img_path, parent, scale=0.2):
     canvas.create_image(new_w//2, new_h//2, image=tk_img)
     canvas.image = tk_img
     return canvas
+def show_msg(title, message, icon="info"):
+    CTkMessagebox(title=title, message=message, icon=icon)
 # ========================= Game Setup Tab =========================
 def setup_main_ui():
     main_frame = ctk.CTkFrame(app)
