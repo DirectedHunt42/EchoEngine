@@ -17,12 +17,9 @@ import json
 import tkinter as tk
 import platform
 
-# Get the base directory of the script
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
 # ---------- CONFIG ----------
-IMPORT_DESTINATION = os.path.join(BASE_DIR, "Working_game")
-EXPORT_SOURCE = os.path.join(BASE_DIR, "Working_game")
+IMPORT_DESTINATION = r"Working_game"
+EXPORT_SOURCE = r"Working_game"
 DEFAULT_WIDTH = 600
 DEFAULT_HEIGHT = 750
 PROGRESS_AREA_HEIGHT = 70
@@ -34,17 +31,9 @@ OTHER_LINUX_UPDATE_ASSET = "Echo_Editor_Setup_linux.sh"
 DARWIN_UPDATE_ASSET = "Echo_Editor_Setup_mac.dmg"
 
 os_name = platform.system().lower()
-ASCII_ART_GENERATOR_PATH = os.path.join(BASE_DIR, "Ascii_generator.exe" if os_name == "windows" else "Ascii_generator")
-EDITOR_PATH = os.path.join(BASE_DIR, "Engine_editor", "Echo_editor.exe" if os_name == "windows" else "Echo_editor")
+ASCII_ART_GENERATOR_PATH = "Ascii_generator.exe" if os_name == "windows" else "Ascii_generator"
+EDITOR_PATH = "Engine_editor/Echo_editor.exe" if os_name == "windows" else "Engine_editor/Echo_editor"
 ENGINE_BASE_PROCESS = "Engine_base.exe" if os_name == "windows" else "Engine_base"
-
-# For non-Windows, ensure executables have permissions (run once if needed)
-if os_name != "windows":
-    try:
-        os.chmod(ASCII_ART_GENERATOR_PATH, 0o755)
-        os.chmod(EDITOR_PATH, 0o755)
-    except FileNotFoundError:
-        pass  # Will be handled later
 
 # ---------- Helper Functions ----------
 def show_custom_message(title, message, is_error=False):
@@ -91,7 +80,6 @@ def ask_confirmation(title, message):
     return response["confirmed"]
 
 def load_resized_image(path, max_size=64):
-    path = os.path.join(BASE_DIR, path)  # Make absolute
     if os.path.exists(path):
         try:
             image = Image.open(path)
@@ -208,8 +196,6 @@ def clear_folder(folder_path):
         show_custom_message("Info", "Directory is already empty.")
 
 def copy_folder_with_progress(src, dest):
-    src = os.path.join(BASE_DIR, src)  # Make absolute
-    dest = os.path.join(BASE_DIR, dest)  # Make absolute
     actions = []
     if os.path.exists(dest):
         if not ask_confirmation("Overwrite Project",
@@ -238,7 +224,7 @@ def copy_folder_with_progress(src, dest):
 # ---------- Main Actions ----------
 def copy_folder_contents():
     try:
-        actions = copy_folder_with_progress("Engine_base", "Working_game")
+        actions = copy_folder_with_progress(r"Engine_base", IMPORT_DESTINATION)
         if actions:
             run_with_progress("Creating new project", actions)
         else:
@@ -333,19 +319,8 @@ def export_zip():
 def open_project():
     global EDITOR_PATH
     if not os.path.exists(EDITOR_PATH):
-        # Fallback to Python version if executable not found
-        editor_py_path = os.path.join(BASE_DIR, "Engine_editor", "Echo_editor.py")
-        if os.path.exists(editor_py_path):
-            try:
-                subprocess.Popen([sys.executable, editor_py_path])
-                app.destroy()
-                return
-            except Exception as e:
-                show_custom_message("Error", str(e), is_error=True)
-                return
-        else:
-            show_custom_message("Error", f"Editor not found at:\n{EDITOR_PATH} or Python fallback", is_error=True)
-            return
+        show_custom_message("Error", f"Editor not found at:\n{EDITOR_PATH}", is_error=True)
+        return
     try:
         subprocess.Popen(EDITOR_PATH)
         app.destroy()
@@ -355,22 +330,12 @@ def open_project():
 def open_ascii_generator():
     global ASCII_ART_GENERATOR_PATH
     if not os.path.exists(ASCII_ART_GENERATOR_PATH):
-        # Fallback to Python version if executable not found
-        ascii_py_path = os.path.join(BASE_DIR, "Ascii_generator.py")
-        if os.path.exists(ascii_py_path):
-            try:
-                subprocess.Popen([sys.executable, ascii_py_path])
-                app.destroy()
-                return
-            except Exception as e:
-                show_custom_message("Error", f"Failed to open ASCII Art Generator: {str(e)}", is_error=True)
-                return
-        else:
-            show_custom_message("Error", f"ASCII Art Generator not found at:\n{ASCII_ART_GENERATOR_PATH} or Python fallback", is_error=True)
-            return
+        show_custom_message("Error", f"ASCII Art Generator not found at:\n{ASCII_ART_GENERATOR_PATH}", is_error=True)
+        return
     try:
         # Launch the executable without waiting for it to finish
-        subprocess.Popen(ASCII_ART_GENERATOR_PATH)
+        full_path = os.path.abspath(ASCII_ART_GENERATOR_PATH)
+        subprocess.Popen([full_path])
         app.destroy()
     except Exception as e:
         show_custom_message("Error", f"Failed to open ASCII Art Generator: {str(e)}", is_error=True)
@@ -439,7 +404,7 @@ def download_and_install(data):
         show_custom_message("Error", f"Update file '{asset_name}' not found for your OS.", is_error=True)
         return
 
-    setup_file = os.path.join(BASE_DIR, asset_name)
+    setup_file = os.path.join(os.path.dirname(sys.argv[0]), asset_name)
     for btn in (copy_btn, import_btn, export_btn, open_btn, clear_btn):
         btn.configure(state='disabled')
     status_label.configure(text="Downloading update...")
@@ -490,8 +455,8 @@ app.resizable(False, True)  # width fixed, height adjustable
 app.minsize(DEFAULT_WIDTH, DEFAULT_HEIGHT)
 
 # Icon
-window_icon_path = os.path.join(BASE_DIR, "Engine_editor", "Icons", "Echo_hub.ico") if os_name == "windows" else os.path.join(BASE_DIR, "Engine_editor", "Icons", "Echo_hub.xbm")
-label_icon_path = os.path.join(BASE_DIR, "Engine_editor", "Icons", "Echo_hub.ico")
+window_icon_path = os.path.join("Engine_editor", "Icons", "Echo_hub.ico") if os_name == "windows" else os.path.join("Engine_editor", "Icons", "Echo_hub.xbm")
+label_icon_path = os.path.join("Engine_editor", "Icons", "Echo_hub.ico")
 if os.path.exists(window_icon_path):
     try:
         app.iconbitmap(window_icon_path)
@@ -508,7 +473,7 @@ app.geometry(f"{app.winfo_width()}x{app.winfo_height()}+{x}+{y}")
 frame = ctk.CTkFrame(app, corner_radius=15)
 frame.pack(expand=True, fill="both", padx=20, pady=20)
 
-icon_ctk = load_resized_image(os.path.join("Engine_editor", "Icons", "Echo_hub.ico"))
+icon_ctk = load_resized_image(label_icon_path)
 if icon_ctk:
     ctk.CTkLabel(frame, image=icon_ctk, text="").pack(pady=(10, 5))
 
@@ -555,8 +520,8 @@ status_label.pack(pady=(0, 2))
 progress_bar = ctk.CTkProgressBar(progress_frame, height=15)
 file_status_label = ctk.CTkLabel(progress_frame, text="", font=("Segoe UI", 10), text_color="gray")
 
-bottom_logo_path = os.path.join(BASE_DIR, "Engine_editor", "Icons", "Nova_foundry", "Nova_foundry_wide_transparent.png")
-logo_ctk = load_resized_image(os.path.relpath(bottom_logo_path, BASE_DIR), max_size=128)
+bottom_logo_path = os.path.join("Engine_editor", "Icons", "Nova_foundry", "Nova_foundry_wide_transparent.png")
+logo_ctk = load_resized_image(bottom_logo_path, max_size=128)
 if logo_ctk:
     progress_frame.pack(pady=10, fill="x")
     logo_label = ctk.CTkLabel(frame, image=logo_ctk, text="")
