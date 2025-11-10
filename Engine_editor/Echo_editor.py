@@ -90,7 +90,10 @@ if os.path.exists(icon_path):
         print(f"Could not set window icon: {e}")
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("dark-blue")
-app.state("zoomed")
+if os_name == "windows":
+    app.wm_state("zoomed")
+else:
+    app.wm_attributes('-zoomed', True)
 app.update()
 screen_w, screen_h = app.winfo_screenwidth(), app.winfo_screenheight()
 # ---------- Load Custom Font ----------
@@ -325,7 +328,7 @@ def setup_main_ui():
                 else:
                     # For all other file types, just check if the file exists
                     should_highlight = True
-            
+           
                 if should_highlight:
                     try:
                         # Handle standard text entry fields
@@ -343,22 +346,22 @@ def setup_main_ui():
                         # Handle the complex text-or-path widgets
                         elif isinstance(widget, tuple) and len(widget) == 6:
                             path_entry, textbox, path_var, text_var, _, _ = widget
-                        
+                       
                             # Read content from the text file
                             with open(full_path, 'r', encoding='utf-8') as f:
                                 content = f.read()
-                        
+                       
                             # Set to 'text' mode and load content into the textbox
                             text_var.set(1)
                             path_var.set(0)
                             textbox.delete("1.0", "end")
                             textbox.insert("1.0", content)
-                        
+                       
                             # Set the background to green
                             textbox.configure(fg_color=LOADED_COLOR)
                             # Reset the path field color
                             path_entry.configure(fg_color="#444444")
-                        
+                       
                     except Exception as e:
                         print(f"Error reading {key} file: {e}")
                 else:
@@ -399,15 +402,15 @@ def setup_main_ui():
                     if not value:
                         errors.append(f"{key} is required.")
                         continue
-                 
+                
                     # Check for "double commas" or commas at start/end
                     if ",," in value or value.startswith(',') or value.endswith(','):
                         errors.append(f"{key}: Invalid format. Avoid adjacent commas.")
                         continue
-                 
+                
                     # Split by comma and clean up spaces
                     coords = [c.strip() for c in value.split(',')]
-                 
+                
                     # Check if there are exactly 3 parts and all are numbers
                     if len(coords) != 3 or not all(c.lstrip('-').isdigit() for c in coords):
                         errors.append(f"{key}: Must have exactly three numbers (e.g., X,Y,Z).")
@@ -639,7 +642,7 @@ def setup_main_ui():
         plus_buttons = {}
         # Info display on the right side of the editor
         info_display_frame = None
-     
+    
         # --- CONSTANT FOR BACKGROUND/ROOM COLOR ---
         BACKGROUND_COLOR = "#333333"
         current_room = [None, None]
@@ -707,10 +710,10 @@ def setup_main_ui():
                 return
             clear_info_display_frame_tutorial()
             current_room[:] = [grid_x, grid_y]
-         
+        
             if not grid_state:
                 return
-                
+               
             cell = grid_state[grid_y][grid_x]
             if cell is None:
                 return
@@ -856,11 +859,11 @@ def setup_main_ui():
                 except Exception:
                     pass
             plus_buttons.clear()
-        
+       
             if not is_add_mode[0]: # Remove Mode
                 show_all_remove_buttons_tutorial()
                 return
-        
+       
             # Add Mode: Show green "+" buttons around existing rooms
             directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
             for y in range(GRID_DIM_Y):
@@ -912,19 +915,19 @@ def setup_main_ui():
         # UI layout
         main_frame = ctk.CTkFrame(parent_tab, fg_color="#2b2b2b")
         main_frame.pack(fill="both", expand=True, padx=20, pady=(20, 60))
-    
+   
         # NEW: Add toggle button above grid
         toggle_button = ctk.CTkButton(main_frame, text="Remove Mode", font=(custom_font_family, 14),
                                     fg_color="#444444", hover_color="#666666",
                                     command=toggle_mode_tutorial)
         toggle_button.pack(anchor="ne", padx=10, pady=(0, 5))
-    
+   
         info_display_frame = ctk.CTkFrame(main_frame, fg_color="transparent", width=300)
         info_display_frame.pack(side="right", fill="y", padx=(10, 0), pady=10)
-    
+   
         grid_container = ctk.CTkFrame(main_frame, fg_color="transparent")
         grid_container.pack(side="left", fill="both", expand=True, padx=(0, 10), pady=10)
-    
+   
         grid_canvas = ctk.CTkCanvas(grid_container, bg=BACKGROUND_COLOR, highlightthickness=0)
         grid_canvas.pack(fill="both", expand=True)
         grid_container.bind("<Configure>", setup_grid_tutorial)
@@ -1364,7 +1367,7 @@ def setup_main_ui():
         def start_drag(event, floor_idx):
             drag_data["start_y"] = event.y_root
             drag_data["source_idx"] = floor_idx
-         
+        
         def handle_drag(event, floor_idx):
             if drag_data["source_idx"] is None:
                 return
@@ -1469,11 +1472,11 @@ def setup_main_ui():
                 except Exception:
                     pass
             plus_buttons.clear()
-        
+       
             if not is_add_mode[0]: # Remove Mode
                 show_all_remove_buttons_main()
                 return
-        
+       
             # Add Mode
             # Add based on floor below
             floor_below_idx = current_floor[0] - 1
@@ -1786,7 +1789,7 @@ def setup_main_ui():
         try:
             global RUNNER_PATH
             script_dir = save_base_path
-            # The test app is inside the Working_game directory now
+            # The test app is inside the Working_game directory
             exe_path = os.path.join(script_dir, RUNNER_PATH)
             # Ensure the launched runner's current working directory is the
             # runner's folder. Many apps use relative paths internally; if
