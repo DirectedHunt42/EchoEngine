@@ -1,2 +1,0 @@
-C:\Users\jackp\Github Repositories\EchoEngine\Engine_base\bin\Release\net9.0-windows\win-x64\publish\Engine_base.pdb
-C:\Users\jackp\Github Repositories\EchoEngine\Engine_base\bin\Release\net9.0-windows\win-x64\publish\Engine_base.exe
