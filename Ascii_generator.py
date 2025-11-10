@@ -18,9 +18,9 @@ DEFAULT_HEIGHT = 1000
 
 # --- ❗ UPDATE THESE PATHS ---
 # Add the path to your default preview image (e.g., r"C:\MyImages\default.png")
-DEFAULT_PREVIEW_IMAGE_PATH = r"Engine_editor\Icons\Echo_engine\Echo_engine_transparent.png"  
+DEFAULT_PREVIEW_IMAGE_PATH = os.path.join("Engine_editor", "Icons", "Echo_engine", "Echo_engine_transparent.png")  
 # Add the path to your window icon file (e.g., r"C:\MyImages\icon.ico")
-ICON_FILE_PATH = r"Engine_editor\Icons\App_icon\Ascii.ico"             
+ICON_FILE_PATH = os.path.join("Engine_editor", "Icons", "App_icon", "Ascii.ico")             
 # --- ❗ ---
 
 # Define ASCII character sets for different styles (reversed for dark-to-light mapping)

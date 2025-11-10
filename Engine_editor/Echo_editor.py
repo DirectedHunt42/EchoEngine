@@ -34,13 +34,12 @@ save_base_path = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False
 # ---------------- Help resources (assumptions)
 # Default help webpage URL (assumption: replace with real URL if you have one)
 HELP_URL = "https://github.com/DirectedHunt42/EchoEngine/wiki"
+VIDEO_HELP_URL = "https://www.youtube.com/@Nova-Foundry"
 # Default help PDF path relative to resource_base_path. If not present, user will be prompted to pick one.
 HELP_PDF_DEFAULT = os.path.join(resource_base_path, "Docs", "Help", "Help.pdf")
-
 os_name = platform.system().lower()
 HUB_PATH = "Echo_hub.exe" if os_name == "windows" else "Echo_hub"
-RUNNER_PATH = "../Working_game/Echo_runner.exe" if os_name == "windows" else "../Working_game/Echo_runner"
-
+RUNNER_PATH = os.path.join("..", "Working_game", "Echo_runner.exe") if os_name == "windows" else os.path.join("..", "Working_game", "Echo_runner")
 # ========================= Tooltip Helper =========================
 class ToolTip:
     def __init__(self, widget, text):
@@ -82,7 +81,7 @@ class ToolTip:
 app = ctk.CTk()
 app.title("🛠️ Echo Editor")
 # ---------- Custom App Icon ----------
-icon_path = os.path.join(resource_base_path, r"Icons/App_icon/Echo_editor.ico")
+icon_path = os.path.join(resource_base_path, "Icons", "App_icon", "Echo_editor.ico")
 print(icon_path)
 if os.path.exists(icon_path):
     try:
@@ -287,20 +286,20 @@ def setup_main_ui():
     # ========================= Save & Load Logic =========================
     # Hardcoded relative paths
     save_paths = {
-        "Title": r"../Working_game/Text/Misc/Title.txt",
-        "Font": r"../Working_game/Fonts/Font.ttf",
-        "Icon": r"../Working_game/Icons/Icon.png",
-        "Music": r"../Working_game/Sounds/Background.wav",
-        "Base Health": r"../Working_game/Finishing/Default_health.txt",
-        "Damage Chance": r"../Working_game/Finishing/Damage_chance.txt",
-        "Prolog Text": r"../Working_game/Text/Stories/Prolog/Prolog.txt",
-        "Cutscene Text": r"../Working_game/Text/Stories/Tutorial/Tutorial_completed.txt",
-        "Game Over Text": r"../Working_game/Text/Stories/Ending/Game_over.txt",
-        "Win Text": r"../Working_game/Text/Stories/Ending/Win.txt",
-        "Win Location": r"../Working_game/Finishing/Required_room.txt",
-        "Win Items": r"../Working_game/Finishing/Required_items.txt",
-        "Tutorial Items": r"../Working_game/Tutorial/Required_items.txt",
-        "Credits": r"../Working_game/Text/Misc/Credits.txt"
+        "Title": os.path.join("..", "Working_game", "Text", "Misc", "Title.txt"),
+        "Font": os.path.join("..", "Working_game", "Fonts", "Font.ttf"),
+        "Icon": os.path.join("..", "Working_game", "Icons", "Icon.png"),
+        "Music": os.path.join("..", "Working_game", "Sounds", "Background.wav"),
+        "Base Health": os.path.join("..", "Working_game", "Finishing", "Default_health.txt"),
+        "Damage Chance": os.path.join("..", "Working_game", "Finishing", "Damage_chance.txt"),
+        "Prolog Text": os.path.join("..", "Working_game", "Text", "Stories", "Prolog", "Prolog.txt"),
+        "Cutscene Text": os.path.join("..", "Working_game", "Text", "Stories", "Tutorial", "Tutorial_completed.txt"),
+        "Game Over Text": os.path.join("..", "Working_game", "Text", "Stories", "Ending", "Game_over.txt"),
+        "Win Text": os.path.join("..", "Working_game", "Text", "Stories", "Ending", "Win.txt"),
+        "Win Location": os.path.join("..", "Working_game", "Finishing", "Required_room.txt"),
+        "Win Items": os.path.join("..", "Working_game", "Finishing", "Required_items.txt"),
+        "Tutorial Items": os.path.join("..", "Working_game", "Tutorial", "Required_items.txt"),
+        "Credits": os.path.join("..", "Working_game", "Text", "Misc", "Credits.txt")
     }
     accepted_extensions = {
         "Font": [".ttf"],
@@ -326,12 +325,12 @@ def setup_main_ui():
                 else:
                     # For all other file types, just check if the file exists
                     should_highlight = True
-              
+             
                 if should_highlight:
                     try:
                         # Handle standard text entry fields
                         if isinstance(widget, ctk.CTkEntry):
-                            # For simple text fields, read content directly
+                            # For simple text files, read content directly
                             if is_text_file:
                                 with open(full_path, 'r', encoding='utf-8') as f:
                                     content = f.read().strip()
@@ -344,22 +343,22 @@ def setup_main_ui():
                         # Handle the complex text-or-path widgets
                         elif isinstance(widget, tuple) and len(widget) == 6:
                             path_entry, textbox, path_var, text_var, _, _ = widget
-                          
+                         
                             # Read content from the text file
                             with open(full_path, 'r', encoding='utf-8') as f:
                                 content = f.read()
-                          
+                         
                             # Set to 'text' mode and load content into the textbox
                             text_var.set(1)
                             path_var.set(0)
                             textbox.delete("1.0", "end")
                             textbox.insert("1.0", content)
-                          
+                         
                             # Set the background to green
                             textbox.configure(fg_color=LOADED_COLOR)
                             # Reset the path field color
                             path_entry.configure(fg_color="#444444")
-                          
+                         
                     except Exception as e:
                         print(f"Error reading {key} file: {e}")
                 else:
@@ -400,15 +399,15 @@ def setup_main_ui():
                     if not value:
                         errors.append(f"{key} is required.")
                         continue
-                  
+                 
                     # Check for "double commas" or commas at start/end
                     if ",," in value or value.startswith(',') or value.endswith(','):
                         errors.append(f"{key}: Invalid format. Avoid adjacent commas.")
                         continue
-                  
+                 
                     # Split by comma and clean up spaces
                     coords = [c.strip() for c in value.split(',')]
-                  
+                 
                     # Check if there are exactly 3 parts and all are numbers
                     if len(coords) != 3 or not all(c.lstrip('-').isdigit() for c in coords):
                         errors.append(f"{key}: Must have exactly three numbers (e.g., X,Y,Z).")
@@ -631,7 +630,7 @@ def setup_main_ui():
                                  )
     save_main_level_button.place(relx=0.5, rely=1.0, anchor="s", y=-10)
    # ========================= Tutorial Tab =========================
-    def setup_tutorial_tab(parent_tab, custom_font_family="Arial"):
+    def setup_tutorial_tab(parent_tab, custom_font_family):
         # Single-floor grid editor (right: grid)
         GRID_SIZE = 40
         GRID_DIM_X, GRID_DIM_Y = 33, 20
@@ -640,7 +639,7 @@ def setup_main_ui():
         plus_buttons = {}
         # Info display on the right side of the editor
         info_display_frame = None
-      
+     
         # --- CONSTANT FOR BACKGROUND/ROOM COLOR ---
         BACKGROUND_COLOR = "#333333"
         current_room = [None, None]
@@ -708,10 +707,10 @@ def setup_main_ui():
                 return
             clear_info_display_frame_tutorial()
             current_room[:] = [grid_x, grid_y]
-          
+         
             if not grid_state:
                 return
-                  
+                 
             cell = grid_state[grid_y][grid_x]
             if cell is None:
                 return
@@ -857,11 +856,11 @@ def setup_main_ui():
                 except Exception:
                     pass
             plus_buttons.clear()
-          
+         
             if not is_add_mode[0]: # Remove Mode
                 show_all_remove_buttons_tutorial()
                 return
-          
+         
             # Add Mode: Show green "+" buttons around existing rooms
             directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
             for y in range(GRID_DIM_Y):
@@ -896,7 +895,6 @@ def setup_main_ui():
                         add_room_tutorial(x, y, is_immovable=True, initial_name=cell.get('name', 'Room'))
             show_adjacent_placeholders_tutorial()
         def setup_grid_tutorial(event=None):
-            nonlocal grid_canvas
             grid_canvas.delete("all")
             grid_width = GRID_DIM_X * GRID_SIZE
             grid_height = GRID_DIM_Y * GRID_SIZE
@@ -914,19 +912,19 @@ def setup_main_ui():
         # UI layout
         main_frame = ctk.CTkFrame(parent_tab, fg_color="#2b2b2b")
         main_frame.pack(fill="both", expand=True, padx=20, pady=(20, 60))
-      
+     
         # NEW: Add toggle button above grid
         toggle_button = ctk.CTkButton(main_frame, text="Remove Mode", font=(custom_font_family, 14),
                                     fg_color="#444444", hover_color="#666666",
                                     command=toggle_mode_tutorial)
         toggle_button.pack(anchor="ne", padx=10, pady=(0, 5))
-      
+     
         info_display_frame = ctk.CTkFrame(main_frame, fg_color="transparent", width=300)
         info_display_frame.pack(side="right", fill="y", padx=(10, 0), pady=10)
-      
+     
         grid_container = ctk.CTkFrame(main_frame, fg_color="transparent")
         grid_container.pack(side="left", fill="both", expand=True, padx=(0, 10), pady=10)
-      
+     
         grid_canvas = ctk.CTkCanvas(grid_container, bg=BACKGROUND_COLOR, highlightthickness=0)
         grid_canvas.pack(fill="both", expand=True)
         grid_container.bind("<Configure>", setup_grid_tutorial)
@@ -951,8 +949,8 @@ def setup_main_ui():
                             cell['desc'] = desc_text.get("1.0", "end").strip()
                             cell['findable_items'] = items_entry.get().strip()
             script_dir = save_base_path
-            root_folder = os.path.join(script_dir, "../Working_game")
-            tutorial_dir = os.path.join(root_folder, "Text/Room_descriptions/Tutorial")
+            root_folder = os.path.join(script_dir, "..", "Working_game")
+            tutorial_dir = os.path.join(root_folder, "Text", "Room_descriptions", "Tutorial")
             if os.path.exists(tutorial_dir):
                 shutil.rmtree(tutorial_dir)
             os.makedirs(tutorial_dir)
@@ -991,7 +989,7 @@ def setup_main_ui():
         def load_tutorial_data():
             nonlocal grid_state
             script_dir = save_base_path
-            tutorial_dir = os.path.join(script_dir, "../Working_game/Text/Room_descriptions/Tutorial")
+            tutorial_dir = os.path.join(script_dir, "..", "Working_game", "Text", "Room_descriptions", "Tutorial")
             grid_state = [[None for _ in range(GRID_DIM_X)] for _ in range(GRID_DIM_Y)]
             if os.path.exists(tutorial_dir):
                 for room_folder in os.listdir(tutorial_dir):
@@ -1037,7 +1035,7 @@ def setup_main_ui():
             return errors
         load_tutorial_data()
         return save_tutorial, load_tutorial_data, check_tutorial_rooms
-    def setup_main_level_tab(parent_tab, custom_font_family="Arial"):
+    def setup_main_level_tab(parent_tab, custom_font_family):
         GRID_SIZE = 40
         GRID_DIM_X, GRID_DIM_Y = 33, 20
         BACKGROUND_COLOR = "#333333"
@@ -1366,7 +1364,7 @@ def setup_main_ui():
         def start_drag(event, floor_idx):
             drag_data["start_y"] = event.y_root
             drag_data["source_idx"] = floor_idx
-          
+         
         def handle_drag(event, floor_idx):
             if drag_data["source_idx"] is None:
                 return
@@ -1393,7 +1391,8 @@ def setup_main_ui():
             floors_list.insert(new_idx, floor_to_move)
             floors.clear()
             for new_idx_key, (_, data) in enumerate(floors_list):
-                floors[new_idx_key] = data
+                new_floors[new_idx_key] = data
+            floors.update(new_floors)
             if current_floor[0] == old_idx:
                 current_floor[0] = new_idx
             elif old_idx < new_idx:
@@ -1469,11 +1468,11 @@ def setup_main_ui():
                 except Exception:
                     pass
             plus_buttons.clear()
-          
+         
             if not is_add_mode[0]: # Remove Mode
                 show_all_remove_buttons_main()
                 return
-          
+         
             # Add Mode
             # Add based on floor below
             floor_below_idx = current_floor[0] - 1
@@ -1617,8 +1616,8 @@ def setup_main_ui():
                             cell['item_found'] = items_found_entry.get().strip()
                             cell['damage_text'] = damage_text_entry.get("1.0", "end").strip()
             script_dir = save_base_path
-            root_folder = os.path.join(script_dir, "../Working_game")
-            main_dir = os.path.join(root_folder, "Text/Room_descriptions/Main")
+            root_folder = os.path.join(script_dir, "..", "Working_game")
+            main_dir = os.path.join(root_folder, "Text", "Room_descriptions", "Main")
             if os.path.exists(main_dir):
                 shutil.rmtree(main_dir)
             os.makedirs(main_dir)
@@ -1675,7 +1674,7 @@ def setup_main_ui():
             CTkMessagebox(title="Success", message="Main levels saved!", icon="check")
         def load_main_level_data():
             script_dir = save_base_path
-            main_dir = os.path.join(script_dir, "../Working_game/Text/Room_descriptions/Main")
+            main_dir = os.path.join(script_dir, "..", "Working_game", "Text", "Room_descriptions", "Main")
             floors.clear()
             if os.path.exists(main_dir):
                 floor_folders = sorted(os.listdir(main_dir))
@@ -1858,11 +1857,47 @@ def setup_main_ui():
             export_path_entry.insert(0, selected_dir)
     browse_button = ctk.CTkButton(path_frame, text="📂", width=30, fg_color="#444444", hover_color="#666666", command=browse_export_path)
     browse_button.pack(side="right")
+    # Add platform selection
+    platform_label = ctk.CTkLabel(export_container, text="Platform:", font=(custom_font_family, 16))
+    platform_label.pack(pady=(10,5))
+    platform_combo = ctk.CTkComboBox(export_container, values=["Windows", "Linux"])
+    platform_combo.pack(pady=(0,10))
+    if os_name == "windows":
+        platform_combo.set("Windows")
+    else:
+        platform_combo.set("Linux")
+    instructions_var = tk.StringVar()
+    instructions_var.set(
+        "To export your game, specify the folder where you want the game to be exported.\n"
+        "Click the '📂' button to browse for a folder.\n"
+        "Then click the 'Export Game' button to start the export process.\n"
+        "Once the game has been exported, you will find it in a folder named 'Echo_Game_Export' inside the selected directory.\n"
+        "To run the game, run the 'Echo_runner.exe' file located in the exported folder.\n"
+        "You can then safely rename the exported folder to your desired game name to your desired game name, as well as create a custom shortcut to the 'Echo_runner.exe' file for easy access."
+    )
+    export_instructions_label = ctk.CTkLabel(export_container, textvariable=instructions_var, font=(custom_font_family, 14),
+                                             justify="left", wraplength=screen_w-100)
+    export_instructions_label.pack(pady=(10,10), padx=10)
+    def update_instructions(event=None):
+        p = platform_combo.get()
+        runner_name = "Echo_runner.exe" if p == "Windows" else "Echo_runner"
+        text = (
+            "To export your game, specify the folder where you want the game to be exported.\n"
+            "Click the '📂' button to browse for a folder.\n"
+            "Then click the 'Export Game' button to start the export process.\n"
+            "Once the game has been exported, you will find it in a folder named 'Echo_Game_Export' inside the selected directory.\n"
+            f"To run the game, run the '{runner_name}' file located in the exported folder.\n"
+            "You can then safely rename the exported folder to your desired game name, as well as create a custom shortcut to the '{runner_name}' file for easy access."
+        )
+        instructions_var.set(text)
+    platform_combo.bind("<<ComboBoxSelected>>", update_instructions)
+    update_instructions()
     def export_game():
         export_path = export_path_entry.get().strip()
         if not export_path:
             CTkMessagebox(title="Error", message="Please specify an export path.", icon="cancel")
             return
+        platform_choice = platform_combo.get()
         errors = validate_game_setup() + check_tutorial() + check_main()
         if errors:
             CTkMessagebox(title="Validation Error", message="\n".join(errors), icon="cancel")
@@ -1872,7 +1907,7 @@ def setup_main_ui():
         save_main_level()
         try:
             script_dir = save_base_path
-            working_game_dir = os.path.join(script_dir, "../Working_game")
+            working_game_dir = os.path.join(script_dir, "..", "Working_game")
             if not os.path.exists(working_game_dir):
                 CTkMessagebox(title="Error", message="Working_game directory not found. Please save your work first.", icon="cancel")
                 return
@@ -1882,23 +1917,19 @@ def setup_main_ui():
                 progress_bar.pack(pady=(10,10))
                 shutil.rmtree(dest_dir)
             shutil.copytree(working_game_dir, dest_dir)
+            # Adjust the runner based on platform choice
+            current_runner = os.path.join(dest_dir, "Echo_runner.exe" if os_name == "windows" else "Echo_runner")
+            target_runner = os.path.join(dest_dir, "Echo_runner.exe" if platform_choice == "Windows" else "Echo_runner")
+            if os.path.exists(current_runner):
+                os.rename(current_runner, target_runner)
+                if platform_choice == "Linux" and os_name != "windows":
+                    os.chmod(target_runner, 0o755)
             CTkMessagebox(title="Success", message=f"Game exported successfully to:\n{dest_dir}", icon="check")
         except Exception as e:
             CTkMessagebox(title="Error", message=f"Failed to export game:\n{e}", icon="cancel")
     export_button = ctk.CTkButton(export_container, text="Export Game", font=(custom_font_family, 16),
                                   fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black", command=export_game)
     export_button.pack(pady=(20,10))
-    export_instructions = (
-        "To export your game, specify the folder where you want the game to be exported.\n"
-        "Click the '📂' button to browse for a folder.\n"
-        "Then click the 'Export Game' button to start the export process.\n"
-        "Once the game has been exported, you will find it in a folder named 'Echo_Game_Export' inside the selected directory.\n"
-        "To run the game, run the 'Echo_runner.exe' file located in the exported folder.\n"
-        "You can then safely rename the exported folder to your desired game name, as well as create a custom shortcut to the 'Echo_runner.exe' file for easy access."
-    )
-    export_instructions_label = ctk.CTkLabel(export_container, text=export_instructions, font=(custom_font_family, 14),
-                                             justify="left", wraplength=screen_w-100)
-    export_instructions_label.pack(pady=(10,10), padx=10)
     # ========================= About Tab =========================
     about_container = ctk.CTkScrollableFrame(about_tab, fg_color="#222222", corner_radius=10)
     about_container.pack(expand=True, fill="both", padx=20, pady=20)
@@ -2011,6 +2042,14 @@ def setup_main_ui():
         url_label.bind("<Button-1>", lambda e: webbrowser.open_new(HELP_URL))
         open_browser_inline = ctk.CTkButton(faux_frame, text="Open in Browser", fg_color="#2638DB", hover_color="#321FDD", command=lambda: webbrowser.open_new(HELP_URL))
         open_browser_inline.pack(padx=10, pady=(0,10), anchor="w")
+    # Add video help section
+    video_header = ctk.CTkLabel(help_container, text="Video Help", font=(custom_font_family, 18, "bold"))
+    video_header.pack(pady=(10,5), anchor="w", padx=10)
+    video_link_label = ctk.CTkLabel(help_container, text=VIDEO_HELP_URL, font=(custom_font_family, 14), text_color="#1E90FF", cursor="hand2")
+    video_link_label.pack(pady=(0,5), anchor="w", padx=10)
+    video_link_label.bind("<Button-1>", lambda e: webbrowser.open_new(VIDEO_HELP_URL))
+    open_video_inline = ctk.CTkButton(help_container, text="Open Video in Browser", fg_color="#2638DB", hover_color="#321FDD", command=lambda: webbrowser.open_new(VIDEO_HELP_URL))
+    open_video_inline.pack(padx=10, pady=(0,10), anchor="w")
     # Button below the 'window' to open the help PDF
     open_pdf_tab_btn = ctk.CTkButton(help_container, text="Open Help PDF", font=(custom_font_family, 14),
                                      fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black",

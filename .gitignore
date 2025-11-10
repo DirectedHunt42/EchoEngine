@@ -10,3 +10,4 @@ Thumbs.db
 # Ignore everything in Working_game except .gitkeep
 Working_game/*
 !Working_game/.gitkeep
+Log/

@@ -1,2 +1,0 @@
-E:\Projects\Programming\Echo Engine\Engine_base\bin\Release\net9.0-windows\win-x64\publish\Engine_base.pdb
-E:\Projects\Programming\Echo Engine\Engine_base\bin\Release\net9.0-windows\win-x64\publish\Engine_base.exe
