@@ -40,3 +40,4 @@
 [![Flag Counter](https://s01.flagcounter.com/countxl/CNIc/bg_0D1117/txt_FFFFFF/border_0D1117/columns_6/maxflags_20/viewers_0/labels_1/pageviews_1/flags_0/percent_1/)](https://info.flagcounter.com/CNIc)
 
 [Buy me a coffee](https://buymeacoffee.com/novafoundry)
+[Video Help](https://www.youtube.com/@Nova-Foundry)
