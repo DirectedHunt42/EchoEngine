@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "dXrtM9QqG3I=",
+  "success": true,
+  "projectFilePath": "E:\\Projects\\Programming\\Echo Engine\\Engine_base\\Echo_runner.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\jackp\\.nuget\\packages\\microsoft.net.illink.tasks\\9.0.10\\microsoft.net.illink.tasks.9.0.10.nupkg.sha512",
+    "C:\\Users\\jackp\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\9.0.10\\microsoft.netcore.app.runtime.win-x64.9.0.10.nupkg.sha512",
+    "C:\\Users\\jackp\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\9.0.10\\microsoft.windowsdesktop.app.runtime.win-x64.9.0.10.nupkg.sha512",
+    "C:\\Users\\jackp\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\9.0.10\\microsoft.aspnetcore.app.runtime.win-x64.9.0.10.nupkg.sha512"
+  ],
+  "logs": []
+}
