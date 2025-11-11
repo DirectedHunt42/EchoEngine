@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- 🧱 Single-file build -->
+    <PublishSingleFile>true</PublishSingleFile>
+
+    <!-- 📦 Bundle everything, including native libraries -->
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+
+    <!-- 🚫 Don’t trim (WinForms not compatible with trimming) -->
+    <PublishTrimmed>false</PublishTrimmed>
+
+    <!-- 🔧 Bundle all dependencies into the exe -->
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+
+    <!-- 🧩 Optional: compress the bundle to reduce size -->
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  </PropertyGroup>
+
+</Project>
