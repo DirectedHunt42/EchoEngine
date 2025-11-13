@@ -6,6 +6,7 @@ Thumbs.db
 .vscode/
 .idea/
 *.iml
+*.ini
 
 # Ignore everything in Working_game except .gitkeep
 Working_game/*

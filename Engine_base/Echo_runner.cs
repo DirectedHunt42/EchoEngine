@@ -1,50 +1,60 @@
 // Jack Murray | Nova Foundry
 // Echo Engine
-// v 3.0.0
-
+// v 4.0.0
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Controls.Primitives;
+using Avalonia.Data;
+using Avalonia.Input;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.Platform;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Text;
+using System.Globalization;
 using System.IO;
-using System.Media;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
-using System.Windows.Forms;
-using System.Runtime.InteropServices;
-
 namespace EchoEngine
 {
-    public partial class MainForm : Form
+    public class MainWindow : Window
     {
         private TextBox outputArea;
         private StringBuilder outputBuffer = new StringBuilder();
-        private volatile string userInput = null;
+        private volatile string? userInput = null;
         private readonly object inputLock = new object();
         private int promptPosition = 0;
-
-        [DllImport("uxtheme.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern int SetWindowTheme(IntPtr hWnd, string pszSubAppName, string? pszSubIdList);
-
-        // Always scroll to the end of the output area
+        private bool logoShown = false;
         private void ScrollToEnd()
         {
-            this.Invoke((MethodInvoker)delegate
+            Dispatcher.UIThread.Post(() =>
             {
-                outputArea.SelectionStart = outputArea.Text.Length;
-                outputArea.ScrollToCaret();
+                outputArea.CaretIndex = outputArea.Text?.Length ?? 0;
+                // Note: Avalonia TextBox automatically scrolls to caret if focused
             });
         }
-
-        public MainForm()
+        private string GetPath(string relativePath)
         {
-            InitializeComponent();
+            return Path.Combine(AppContext.BaseDirectory, relativePath.Replace('/', Path.DirectorySeparatorChar));
+        }
+        public MainWindow()
+        {
+            // Create Save directory if it doesn't exist
+            string saveDir = GetPath("Save");
+            if (!Directory.Exists(saveDir))
+            {
+                Directory.CreateDirectory(saveDir);
+            }
 
             // Read the title from the text file
             string windowTitle = "";
             try
             {
-                string titlePath = Path.Combine("Text", "Misc", "Title.txt");
+                string titlePath = GetPath("Text/Misc/Title.txt");
                 if (File.Exists(titlePath))
                 {
                     using (StreamReader titleReader = new StreamReader(titlePath))
@@ -68,295 +78,247 @@ namespace EchoEngine
                 windowTitle = "Echo Engine";
                 Console.Error.WriteLine("Warning: Error reading Title.txt. Using default title.");
             }
-
-            this.Text = windowTitle;
-
-            // Start playing sound in the background
-            Thread soundThread = new Thread(() =>
-            {
-                try
-                {
-                    SoundPlayer player = new SoundPlayer(Path.Combine("Sounds", "Background.wav"));
-                    player.PlayLooping();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
-                }
-            });
-            soundThread.IsBackground = true;
-            soundThread.Start();
-
-            // Setup GUI
-            try
-            {
-                Application.SetCompatibleTextRenderingDefault(false);
-            }
-            catch { }
-
-            this.FormBorderStyle = FormBorderStyle.None;
-            this.WindowState = FormWindowState.Maximized;
-
+            this.Title = windowTitle;
+            // Start playing sound in the background (commented out as System.Media is Windows-only)
+            // For cross-platform audio, consider using a library like NAudio.PortAudio or LibVLCSharp
+            // if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            // {
+            // Thread soundThread = new Thread(() =>
+            // {
+            // try
+            // {
+            // System.Media.SoundPlayer player = new System.Media.SoundPlayer(GetPath("Sounds/Background.wav"));
+            // player.PlayLooping();
+            // }
+            // catch (Exception ex)
+            // {
+            // Console.WriteLine(ex.ToString());
+            // }
+            // });
+            // soundThread.IsBackground = true;
+            // soundThread.Start();
+            // }
+            this.WindowState = WindowState.FullScreen;
+            this.ExtendClientAreaToDecorationsHint = true;
+            this.ExtendClientAreaChromeHints = ExtendClientAreaChromeHints.NoChrome;
+            this.ExtendClientAreaTitleBarHeightHint = -1;
+            this.Background = Brushes.Black;
             // Set app icon
             try
             {
-                Icon icon = null;
-                string iconPath = Path.Combine("Icons", "Icon.ico");
+                string iconPath = GetPath("Icons/Icon.ico");
                 if (File.Exists(iconPath))
                 {
-                    icon = new Icon(iconPath);
+                    this.Icon = new WindowIcon(iconPath);
                 }
                 else
                 {
-                    string defaultIconPath = Path.Combine("Icons", "Default_icon.ico");
+                    string defaultIconPath = GetPath("Icons/Default_icon.ico");
                     if (File.Exists(defaultIconPath))
                     {
-                        icon = new Icon(defaultIconPath);
+                        this.Icon = new WindowIcon(defaultIconPath);
                     }
-                }
-                if (icon != null)
-                {
-                    this.Icon = icon;
                 }
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Icon loading error: " + ex.Message);
             }
-
-            // Load custom fonts if available, else fallback
-            PrivateFontCollection privateFonts = new PrivateFontCollection();
-            Font? mainFont = null;
-            Font? titleFont = null;
+            // Fonts: Load custom fonts from files
+            FontFamily mainFontFamily;
+            FontFamily titleFontFamily;
+            double mainFontSize = 12.8;
+            FontWeight mainFontWeight = FontWeight.Normal;
+            FontStyle mainFontStyle = FontStyle.Normal;
+            double titleFontSize = 12.8;
+            FontWeight titleFontWeight = FontWeight.Bold;
+            FontStyle titleFontStyle = FontStyle.Normal;
             try
             {
-                string fontPath = Path.Combine("Fonts", "Font.ttf");
+                string fontPath = GetPath("Fonts/Font.ttf");
                 if (File.Exists(fontPath))
                 {
-                    privateFonts.AddFontFile(fontPath);
-                    mainFont = new Font(privateFonts.Families[0], 12.8f, FontStyle.Regular);
+                    mainFontFamily = new FontFamily("file:///" + Path.GetFullPath(fontPath).Replace('\\', '/'));
+                }
+                else
+                {
+                    string defaultFontPath = GetPath("Fonts/Default.ttf");
+                    if (File.Exists(defaultFontPath))
+                    {
+                        mainFontFamily = new FontFamily("file:///" + Path.GetFullPath(defaultFontPath).Replace('\\', '/'));
+                    }
+                    else
+                    {
+                        mainFontFamily = new FontFamily("monospace");
+                    }
                 }
             }
             catch
             {
-                mainFont = null;
+                mainFontFamily = new FontFamily("monospace");
             }
             try
             {
-                string titleFontPath = Path.Combine("Fonts", "Title_font.ttf");
+                string titleFontPath = GetPath("Fonts/Title_font.ttf");
                 if (File.Exists(titleFontPath))
                 {
-                    privateFonts.AddFontFile(titleFontPath);
-                    titleFont = new Font(privateFonts.Families[0], 12.8f, FontStyle.Bold);
+                    titleFontFamily = new FontFamily("file:///" + Path.GetFullPath(titleFontPath).Replace('\\', '/'));
+                }
+                else
+                {
+                    string defaultFontPath = GetPath("Fonts/Default.ttf");
+                    if (File.Exists(defaultFontPath))
+                    {
+                        titleFontFamily = new FontFamily("file:///" + Path.GetFullPath(defaultFontPath).Replace('\\', '/'));
+                    }
+                    else
+                    {
+                        titleFontFamily = new FontFamily("monospace");
+                    }
                 }
             }
             catch
             {
-                titleFont = null;
+                titleFontFamily = new FontFamily("monospace");
             }
-            // Fallback to Default.ttf if needed
-            if (mainFont == null)
+            DockPanel contentPanel = new DockPanel
             {
-                try
-                {
-                    string defaultFontPath = Path.Combine("Fonts", "Default.ttf");
-                    if (File.Exists(defaultFontPath))
-                    {
-                        privateFonts.AddFontFile(defaultFontPath);
-                        mainFont = new Font(privateFonts.Families[0], 12.8f, FontStyle.Regular);
-                    }
-                }
-                catch
-                {
-                    mainFont = null;
-                }
-            }
-            if (titleFont == null)
+                Background = Brushes.Black
+            };
+            DockPanel titleBar = new DockPanel
             {
-                try
-                {
-                    string defaultFontPath = Path.Combine("Fonts", "Default.ttf");
-                    if (File.Exists(defaultFontPath))
-                    {
-                        privateFonts.AddFontFile(defaultFontPath);
-                        titleFont = new Font(privateFonts.Families[0], 12.8f, FontStyle.Regular);
-                    }
-                }
-                catch
-                {
-                    titleFont = null;
-                }
-            }
-            // Final fallback to Consolas
-            if (mainFont == null)
-            {
-                mainFont = new Font("Consolas", 12.8f, FontStyle.Regular);
-            }
-            if (titleFont == null)
-            {
-                titleFont = new Font("Consolas", 12.8f, FontStyle.Bold);
-            }
-
-            Panel titleBar = new Panel
-            {
-                Dock = DockStyle.Top,
                 Height = 30,
-                BackColor = Color.Transparent
+                Background = Brushes.Black
             };
-            titleBar.Paint += (sender, e) =>
-            {
-                e.Graphics.FillRectangle(Brushes.Black, 0, 0, titleBar.Width, titleBar.Height);
-            };
-
+            DockPanel.SetDock(titleBar, Dock.Top);
             Label titleLabel = new Label
             {
-                Text = " " + windowTitle,
-                ForeColor = Color.FromArgb(220, 220, 220),
-                Font = titleFont,
-                Dock = DockStyle.Left,
-                AutoSize = true
+                Content = " " + windowTitle,
+                Foreground = new SolidColorBrush(Color.FromArgb(255, 220, 220, 220)),
+                FontFamily = titleFontFamily,
+                FontSize = titleFontSize,
+                FontWeight = titleFontWeight,
+                FontStyle = titleFontStyle,
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Left
             };
-            titleBar.Controls.Add(titleLabel);
-
-            Panel buttonPanel = new Panel
+            DockPanel.SetDock(titleLabel, Dock.Left);
+            StackPanel buttonPanel = new StackPanel
             {
-                Dock = DockStyle.Right,
-                BackColor = Color.Transparent
+                Orientation = Avalonia.Layout.Orientation.Horizontal,
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
             };
+            DockPanel.SetDock(buttonPanel, Dock.Right);
             Button minBtn = new Button
             {
-                Text = "-",
-                ForeColor = Color.White,
-                BackColor = Color.Black,
-                FlatStyle = FlatStyle.Flat,
+                Content = "-",
+                Foreground = Brushes.White,
+                Background = Brushes.Black,
+                BorderBrush = null,
+                BorderThickness = new Thickness(0),
                 Width = 45,
-                Height = 28
+                Height = 28,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center
             };
-            minBtn.FlatAppearance.BorderColor = Color.White;
-            minBtn.FlatAppearance.BorderSize = 1;
-            minBtn.Click += (s, e) => this.WindowState = FormWindowState.Minimized;
-            buttonPanel.Controls.Add(minBtn);
-
+            minBtn.Click += (s, e) => this.WindowState = WindowState.Minimized;
             Button closeBtn = new Button
             {
-                Text = "X",
-                ForeColor = Color.White,
-                BackColor = Color.Black,
-                FlatStyle = FlatStyle.Flat,
+                Content = "X",
+                Foreground = Brushes.White,
+                Background = Brushes.Black,
+                BorderBrush = null,
+                BorderThickness = new Thickness(0),
                 Width = 45,
-                Height = 28
+                Height = 28,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center
             };
-            closeBtn.FlatAppearance.BorderColor = Color.White;
-            closeBtn.FlatAppearance.BorderSize = 1;
-            closeBtn.Click += (s, e) => Application.Exit();
-            buttonPanel.Controls.Add(closeBtn);
-            closeBtn.Dock = DockStyle.Right;
-            minBtn.Dock = DockStyle.Right;
-
-            titleBar.Controls.Add(buttonPanel);
-
-            Point? mouseDownCompCoords = null;
-            titleBar.MouseDown += (s, e) => mouseDownCompCoords = e.Location;
-            titleBar.MouseUp += (s, e) => mouseDownCompCoords = null;
-            titleBar.MouseMove += (s, e) =>
+            closeBtn.Click += (s, e) => this.Close();
+            buttonPanel.Children.Add(minBtn);
+            buttonPanel.Children.Add(closeBtn);
+            titleBar.Children.Add(titleLabel);
+            titleBar.Children.Add(buttonPanel);
+            Border separator = new Border
             {
-                if (mouseDownCompCoords.HasValue)
-                {
-                    Point currCoords = titleBar.PointToScreen(e.Location);
-                    this.Location = new Point(currCoords.X - mouseDownCompCoords.Value.X, currCoords.Y - mouseDownCompCoords.Value.Y);
-                }
-            };
-
-            Panel separator = new Panel
-            {
-                Dock = DockStyle.Top,
                 Height = 1,
-                BackColor = Color.White
+                Background = Brushes.White
             };
-
+            DockPanel.SetDock(separator, Dock.Top);
             outputArea = new TextBox
             {
-                Multiline = true,
-                ScrollBars = ScrollBars.Vertical,
-                WordWrap = true,
                 AcceptsReturn = true,
-                Font = mainFont,
-                BackColor = Color.Black,
-                ForeColor = Color.FromArgb(220, 220, 220),
-                Dock = DockStyle.Fill,
-                BorderStyle = BorderStyle.None
+                AcceptsTab = true,
+                TextWrapping = TextWrapping.Wrap,
+                FontFamily = mainFontFamily,
+                FontSize = mainFontSize,
+                FontWeight = mainFontWeight,
+                FontStyle = mainFontStyle,
+                Background = Brushes.Black,
+                Foreground = new SolidColorBrush(Color.FromArgb(255, 220, 220, 220)),
+                BorderThickness = new Thickness(0)
             };
-
-            Panel contentPanel = new Panel
-            {
-                Dock = DockStyle.Fill,
-                BackColor = Color.Black
-            };
-            contentPanel.Controls.Add(outputArea);
-            contentPanel.Controls.Add(separator);
-            contentPanel.Controls.Add(titleBar);
-
-            this.Controls.Add(contentPanel);
-            this.BackColor = Color.Black;
-
+            ScrollViewer.SetVerticalScrollBarVisibility(outputArea, ScrollBarVisibility.Auto);
+            outputArea.TextInput += OutputArea_TextInput;
             outputArea.KeyDown += OutputArea_KeyDown;
-            outputArea.KeyPress += OutputArea_KeyPress;
-
-            this.Load += (s, e) =>
-            {
-                SetWindowTheme(this.Handle, "DarkMode_Explorer", null);
-                SetWindowTheme(outputArea.Handle, "DarkMode_Explorer", null);
-            };
-
-            this.Shown += (s, e) =>
+            contentPanel.Children.Add(titleBar);
+            contentPanel.Children.Add(separator);
+            contentPanel.Children.Add(outputArea);
+            this.Content = contentPanel;
+            this.SizeChanged += OnSizeChanged;
+            this.Opened += (s, e) =>
             {
                 outputArea.Focus();
-                Thread logoThread = new Thread(() => ShowLogoAndStart(windowTitle));
-                logoThread.IsBackground = true;
-                logoThread.Start();
             };
         }
-
-        private void OutputArea_KeyPress(object? sender, KeyPressEventArgs e)
+        private void OnSizeChanged(object? sender, SizeChangedEventArgs e)
         {
-            if (outputArea.SelectionStart < promptPosition)
+            if (!logoShown && e.NewSize.Width > 0)
             {
-                outputArea.SelectionStart = outputArea.Text.Length;
+                logoShown = true;
+                string title = this.Title;
+                Thread logoThread = new Thread(() => ShowLogoAndStart(title));
+                logoThread.IsBackground = true;
+                logoThread.Start();
+            }
+        }
+        private void OutputArea_TextInput(object? sender, TextInputEventArgs e)
+        {
+            if (outputArea.CaretIndex < promptPosition)
+            {
+                outputArea.CaretIndex = outputArea.Text?.Length ?? 0;
                 e.Handled = true;
             }
         }
-
         private void OutputArea_KeyDown(object? sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Back && outputArea.SelectionStart <= promptPosition)
+            if (e.Key == Key.Back && outputArea.CaretIndex <= promptPosition)
             {
                 e.Handled = true;
                 return;
             }
-            if (e.KeyCode == Keys.Enter)
+            if (e.Key == Key.Enter)
             {
-                if (outputArea.SelectionStart >= promptPosition)
+                if (outputArea.CaretIndex >= promptPosition)
                 {
-                    string text = outputArea.Text;
+                    string text = outputArea.Text ?? "";
                     string input = text.Substring(promptPosition).Replace("\n", "").Trim();
                     lock (inputLock)
                     {
                         userInput = input;
                         Monitor.PulseAll(inputLock);
                     }
-                    outputArea.SelectionStart = outputArea.Text.Length;
+                    outputArea.CaretIndex = text.Length;
                 }
                 e.Handled = true;
             }
         }
-
         // Show the Echo Engine logo (ASCII art from txt) centered for 2 seconds, then start the game
-        private void ShowLogoAndStart(string windowTitle)
+        private void ShowLogoAndStart(string? windowTitle)
         {
             string logo = "";
             try
             {
-                string logoPath = Path.Combine("Icons", "Echo_engine_logo.txt");
+                string logoPath = GetPath("Icons/Echo_engine_logo.txt");
                 if (File.Exists(logoPath))
                 {
                     logo = File.ReadAllText(logoPath);
@@ -370,64 +332,58 @@ namespace EchoEngine
             {
                 logo = "[Echo Engine Logo Error]";
             }
-
-            // Center logo in outputArea (both vertically and horizontally, and fit to area)
-            Font originalFont = outputArea.Font;
-            float logoFontSize = Math.Max(8f, originalFont.Size * 0.75f);
-            Font logoFont = new Font(originalFont.FontFamily, logoFontSize);
-
-            this.Invoke((MethodInvoker)delegate
+            // Center logo in outputArea
+            double originalFontSize = 0;
+            Dispatcher.UIThread.InvokeAsync(() =>
             {
-                outputArea.Font = logoFont;
-                outputBuffer.Length = 0;
+                originalFontSize = outputArea.FontSize;
+            }).Wait();
+            double logoFontSize = Math.Max(8, originalFontSize * 0.75);
+            Dispatcher.UIThread.InvokeAsync(() =>
+            {
+                outputBuffer.Clear();
                 outputArea.Text = "";
                 // Get logo lines
                 string[] logoLines = logo.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
-                // Calculate output area width in characters
-                using (Graphics g = outputArea.CreateGraphics())
+                // Approximate width in characters (assuming monospace)
+                Typeface typeface = new Typeface(outputArea.FontFamily, outputArea.FontStyle, outputArea.FontWeight);
+                FormattedText fmt = new FormattedText("W", CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, logoFontSize, Brushes.Black);
+                double charWidth = fmt.Width;
+                int areaWidthChars = (int)(outputArea.Bounds.Width / charWidth);
+                if (areaWidthChars < 10) areaWidthChars = 80; // fallback
+                StringBuilder centeredLogo = new StringBuilder();
+                int maxLogoWidth = 0;
+                foreach (string line in logoLines)
                 {
-                    int areaWidthPx = outputArea.Width;
-                    float charWidthF = g.MeasureString("W", outputArea.Font).Width;
-                    int charWidth = (int)charWidthF;
-                    int areaWidthChars = Math.Max(10, areaWidthPx / charWidth); // avoid divide by zero
-                    // Center each line horizontally and fit to width
-                    StringBuilder centeredLogo = new StringBuilder();
-                    int maxLogoWidth = 0;
-                    foreach (string line in logoLines)
-                    {
-                        if (line.Length > maxLogoWidth) maxLogoWidth = line.Length;
-                    }
-                    foreach (string line in logoLines)
-                    {
-                        string trimmed = line.Length > areaWidthChars ? line.Substring(0, areaWidthChars) : line;
-                        int horizontalPadding = (areaWidthChars - trimmed.Length) / 2;
-                        for (int i = 0; i < horizontalPadding; i++) centeredLogo.Append(' ');
-                        centeredLogo.AppendLine(trimmed);
-                    }
-                    // Calculate padding for vertical centering
-                    int lines = logoLines.Length;
-                    int areaHeight = outputArea.Height;
-                    float fontHeightF = g.MeasureString("A", outputArea.Font).Height;
-                    int fontHeight = (int)fontHeightF;
-                    int padLines = Math.Max(0, (areaHeight / fontHeight - lines) / 2);
-                    StringBuilder verticalPad = new StringBuilder();
-                    for (int i = 0; i < padLines; i++) verticalPad.AppendLine();
-                    outputArea.Text = verticalPad + centeredLogo.ToString();
-                    outputArea.SelectionStart = 0;
+                    if (line.Length > maxLogoWidth) maxLogoWidth = line.Length;
                 }
-            });
+                foreach (string line in logoLines)
+                {
+                    string trimmed = line.Length > areaWidthChars ? line.Substring(0, areaWidthChars) : line;
+                    int horizontalPadding = (areaWidthChars - trimmed.Length) / 2;
+                    centeredLogo.Append(new string(' ', horizontalPadding));
+                    centeredLogo.AppendLine(trimmed);
+                }
+                // Vertical padding approximate
+                double fontHeight = fmt.Height;
+                int lines = logoLines.Length;
+                int areaHeightLines = (int)(outputArea.Bounds.Height / fontHeight);
+                int padLines = Math.Max(0, (areaHeightLines - lines) / 2);
+                StringBuilder verticalPad = new StringBuilder();
+                for (int i = 0; i < padLines; i++) verticalPad.AppendLine("");
+                outputArea.Text = verticalPad.ToString() + centeredLogo.ToString();
+                outputArea.CaretIndex = 0;
+                outputArea.FontSize = logoFontSize;
+            }).Wait();
             Thread.Sleep(2000);
-
-            this.Invoke((MethodInvoker)delegate
+            Dispatcher.UIThread.InvokeAsync(() =>
             {
-                outputArea.Font = originalFont;
-            });
-
-            Thread gameThread = new Thread(() => RunGame(windowTitle));
+                outputArea.FontSize = 12.8; // restore
+            }).Wait();
+            Thread gameThread = new Thread(() => RunGame(windowTitle ?? "Echo Engine"));
             gameThread.IsBackground = true;
             gameThread.Start();
         }
-
         // Wait for user input from the GUI
         public string GetUserInput()
         {
@@ -443,26 +399,24 @@ namespace EchoEngine
                 return input;
             }
         }
-
         private void PrintPrompt()
         {
-            this.Invoke((MethodInvoker)delegate
+            Dispatcher.UIThread.InvokeAsync(() =>
             {
                 outputBuffer.Append("");
                 outputArea.Text = outputBuffer.ToString();
                 ScrollToEnd();
-                promptPosition = outputArea.Text.Length;
-            });
+                promptPosition = outputArea.Text?.Length ?? 0;
+            }).Wait();
         }
-
         // Print to the output area (with optional delay for typewriter effect and skip on space)
         public void PrintToOutput(string text, int delayMs = 0)
         {
             text = text.Replace("\n", Environment.NewLine);
             bool skip = false;
-            KeyEventHandler skipHandler = delegate(object? sender, KeyEventArgs e)
+            EventHandler<KeyEventArgs> skipHandler = (sender, e) =>
             {
-                if (e.KeyCode == Keys.Space)
+                if (e.Key == Key.Space)
                 {
                     skip = true;
                 }
@@ -475,23 +429,23 @@ namespace EchoEngine
                 {
                     if (skip)
                     {
-                        this.Invoke((MethodInvoker)delegate
+                        Dispatcher.UIThread.InvokeAsync(() =>
                         {
                             outputBuffer.Append(text.Substring(index));
                             outputArea.Text = outputBuffer.ToString();
                             ScrollToEnd();
-                            promptPosition = outputArea.Text.Length;
-                        });
+                            promptPosition = outputArea.Text?.Length ?? 0;
+                        }).Wait();
                         break;
                     }
                     char c = text[index++];
-                    this.Invoke((MethodInvoker)delegate
+                    Dispatcher.UIThread.InvokeAsync(() =>
                     {
                         outputBuffer.Append(c);
                         outputArea.Text = outputBuffer.ToString();
                         ScrollToEnd();
-                        promptPosition = outputArea.Text.Length;
-                    });
+                        promptPosition = outputArea.Text?.Length ?? 0;
+                    }).Wait();
                     if (delayMs > 0)
                     {
                         Thread.Sleep(delayMs);
@@ -503,32 +457,28 @@ namespace EchoEngine
                 outputArea.KeyDown -= skipHandler;
             }
         }
-
         public void ClearOutput()
         {
-            this.Invoke((MethodInvoker)delegate
+            Dispatcher.UIThread.InvokeAsync(() =>
             {
-                outputBuffer.Length = 0;
+                outputBuffer.Clear();
                 outputArea.Text = "";
                 promptPosition = 0;
                 ScrollToEnd();
-            });
+            }).Wait();
         }
-
         // Main game logic (refactored from main)
         public void RunGame(string windowTitle)
         {
-            string menuText = windowTitle + Environment.NewLine + Environment.NewLine + " MAIN MENU" + Environment.NewLine + Environment.NewLine + "  PLAY    - [1]" + Environment.NewLine + "  HELP    - [2]" + Environment.NewLine + "  EXIT    - [3]" + Environment.NewLine + "  CREDITS - [4]" + Environment.NewLine + "  RESET   - [5]" + Environment.NewLine + Environment.NewLine + " >> ";
+            string menuText = windowTitle + Environment.NewLine + Environment.NewLine + " MAIN MENU" + Environment.NewLine + Environment.NewLine + " PLAY - [1]" + Environment.NewLine + " HELP - [2]" + Environment.NewLine + " EXIT - [3]" + Environment.NewLine + " CREDITS - [4]" + Environment.NewLine + " RESET - [5]" + Environment.NewLine + Environment.NewLine + " >> ";
             string helpText = "TO NAVIGATE THE WORLD, USE SIMPLE COMMANDS" + Environment.NewLine + Environment.NewLine + "AVALABLE COMMANDS:" + Environment.NewLine + " north" + Environment.NewLine + " south" + Environment.NewLine + " east" + Environment.NewLine + " west" + Environment.NewLine + " up" + Environment.NewLine + " down" + Environment.NewLine + " inventory" + Environment.NewLine + " search" + Environment.NewLine + " use" + Environment.NewLine + " menu";
             int menuInput = 0;
             string? location = null;
             bool menuLoop = true;
-
             ClearOutput();
             PrintToOutput("PRESS ENTER TO START... ");
             GetUserInput();
             ClearOutput();
-
             while (menuLoop)
             {
                 PrintToOutput(menuText, 10);
@@ -545,7 +495,7 @@ namespace EchoEngine
                 {
                     try
                     {
-                        string filePath = Path.Combine("Save", "Location.txt");
+                        string filePath = GetPath("Save/Location.txt");
                         if (File.Exists(filePath))
                         {
                             using (StreamReader reader = new StreamReader(filePath))
@@ -603,7 +553,7 @@ namespace EchoEngine
                 }
                 else if (menuInput == 4)
                 {
-                    string creditsPath = Path.Combine("Text", "Misc", "Credits.txt");
+                    string creditsPath = GetPath("Text/Misc/Credits.txt");
                     string creditsText = "";
                     try
                     {
@@ -630,7 +580,7 @@ namespace EchoEngine
                     Reset();
                     PrintToOutput(Environment.NewLine + Environment.NewLine + "RESET" + Environment.NewLine + Environment.NewLine + " PLEASE RESTART THE PROGRAM");
                     GetUserInput();
-                    Application.Exit();
+                    this.Close();
                 }
                 else
                 {
@@ -639,19 +589,17 @@ namespace EchoEngine
                     ClearOutput();
                 }
             }
-            Application.Exit();
+            this.Close();
         }
-
         public void Prolog(StreamReader? scanner)
         {
             string displayText = " ";
-
             ClearOutput();
             Reset();
             //prolog part 1
             try
             {
-                string filePath = Path.Combine("Text", "Stories", "Prolog", "Prolog.txt");
+                string filePath = GetPath("Text/Stories/Prolog/Prolog.txt");
                 displayText = File.ReadAllText(filePath).Replace("\n", Environment.NewLine);
             }
             catch
@@ -664,7 +612,6 @@ namespace EchoEngine
             ClearOutput();
             Tutorial(1, 1, scanner);
         }
-
         public void Tutorial(int inputY, int inputX, StreamReader? scanner)
         {
             int x = inputX;
@@ -676,10 +623,9 @@ namespace EchoEngine
             string items = " ";
             string input = " ";
             bool tutorialDone = false;
-
             try
             {
-                using (StreamWriter writer = new StreamWriter(Path.Combine("Save", "Location.txt")))
+                using (StreamWriter writer = new StreamWriter(GetPath("Save/Location.txt")))
                 {
                     writer.Write("0" + y + x + "1");
                 }
@@ -688,14 +634,13 @@ namespace EchoEngine
             {
                 Console.WriteLine(ex.ToString());
             }
-
             bool firstLoop = true;
             while (!tutorialDone)
             {
                 //load data
                 try
                 {
-                    string descPath = Path.Combine("Text", "Room_descriptions", "Tutorial", "y" + y + "_x" + x, "Description.txt");
+                    string descPath = GetPath($"Text/Room_descriptions/Tutorial/y{y}_x{x}/Description.txt");
                     if (File.Exists(descPath))
                     {
                         description = File.ReadAllText(descPath).Replace("\n", Environment.NewLine);
@@ -711,7 +656,7 @@ namespace EchoEngine
                 }
                 try
                 {
-                    string exitsPath = Path.Combine("Text", "Room_descriptions", "Tutorial", "y" + y + "_x" + x, "Exits.txt");
+                    string exitsPath = GetPath($"Text/Room_descriptions/Tutorial/y{y}_x{x}/Exits.txt");
                     if (File.Exists(exitsPath))
                     {
                         using (StreamReader reader = new StreamReader(exitsPath))
@@ -769,19 +714,19 @@ namespace EchoEngine
                     }
                 }
                 // else if (input.equals("journal")){
-                //     printToOutput("\n\n");
-                //     try {
-                //         File file = new File("Text/Stories/Tutorial/Journal.txt");
-                //         Scanner scanner1 = new Scanner(file);
-                //         journal = "";
-                //         while (scanner1.hasNextLine()) {
-                //             journal += scanner1.nextLine() + "\n";
-                //         }
-                //         scanner1.close();
-                //     } catch (FileNotFoundException e) {
-                //         journal = "Journal not found.";
-                //     }
-                //     printToOutput(journal);
+                // printToOutput("\n\n");
+                // try {
+                // File file = new File("Text/Stories/Tutorial/Journal.txt");
+                // Scanner scanner1 = new Scanner(file);
+                // journal = "";
+                // while (scanner1.hasNextLine()) {
+                // journal += scanner1.nextLine() + "\n";
+                // }
+                // scanner1.close();
+                // } catch (FileNotFoundException e) {
+                // journal = "Journal not found.";
+                // }
+                // printToOutput(journal);
                 // }
                 else if (input == "use")
                 {
@@ -794,7 +739,7 @@ namespace EchoEngine
                     string winTitle = "";
                     try
                     {
-                        string titlePath = Path.Combine("Text", "Misc", "Title.txt");
+                        string titlePath = GetPath("Text/Misc/Title.txt");
                         if (File.Exists(titlePath))
                         {
                             using (StreamReader titleReader = new StreamReader(titlePath))
@@ -817,7 +762,6 @@ namespace EchoEngine
                 {
                     PrintToOutput(Environment.NewLine + Environment.NewLine + " THAT IS NOT A VALID INPUT");
                 }
-
                 PrintToOutput(Environment.NewLine + Environment.NewLine + "PRESS ENTER TO CONTINUE... ");
                 if (scanner == null)
                 {
@@ -827,19 +771,17 @@ namespace EchoEngine
                 {
                     scanner.ReadLine();
                 }
-
                 //check if we're done
                 if (CheckInventoryTutorial())
                 {
                     tutorialDone = true;
                 }
             }
-
             ClearOutput();
             string desc = "";
             try
             {
-                string filePath = Path.Combine("Text", "Stories", "Tutorial", "Tutorial_completed.txt");
+                string filePath = GetPath("Text/Stories/Tutorial/Tutorial_completed.txt");
                 desc = File.ReadAllText(filePath).Replace("\n", Environment.NewLine);
             }
             catch
@@ -858,14 +800,13 @@ namespace EchoEngine
             }
             Game(1, 1, 1, scanner);
         }
-
         public void Game(int inputY, int inputX, int inputZ, StreamReader? scanner)
         {
             Random rand = new Random();
             int damageChance = 10;
             try
             {
-                string filePath = Path.Combine("Finishing", "Damage_chance.txt");
+                string filePath = GetPath("Finishing/Damage_chance.txt");
                 if (File.Exists(filePath))
                 {
                     using (StreamReader reader = new StreamReader(filePath))
@@ -893,10 +834,9 @@ namespace EchoEngine
             string input = " ";
             string used = " ";
             bool gameDone = false;
-
             try
             {
-                using (StreamWriter writer = new StreamWriter(Path.Combine("Save", "Location.txt")))
+                using (StreamWriter writer = new StreamWriter(GetPath("Save/Location.txt")))
                 {
                     writer.Write("1" + y + x + z);
                 }
@@ -907,7 +847,7 @@ namespace EchoEngine
             }
             try
             {
-                string healthPath = Path.Combine("Save", "Health.txt");
+                string healthPath = GetPath("Save/Health.txt");
                 if (File.Exists(healthPath))
                 {
                     string? line = File.ReadAllText(healthPath).Trim();
@@ -918,13 +858,12 @@ namespace EchoEngine
                 }
             }
             catch { }
-
             while (!gameDone)
             {
                 //load data
                 try
                 {
-                    string descPath = Path.Combine("Text", "Room_descriptions", "Main", "floor_" + z, "y" + y + "_x" + x, "Description.txt");
+                    string descPath = GetPath($"Text/Room_descriptions/Main/floor_{z}/y{y}_x{x}/Description.txt");
                     description = File.ReadAllText(descPath).Replace("\n", Environment.NewLine);
                 }
                 catch
@@ -933,7 +872,7 @@ namespace EchoEngine
                 }
                 try
                 {
-                    string exitsPath = Path.Combine("Text", "Room_descriptions", "Main", "floor_" + z, "y" + y + "_x" + x, "Exits.txt");
+                    string exitsPath = GetPath($"Text/Room_descriptions/Main/floor_{z}/y{y}_x{x}/Exits.txt");
                     using (StreamReader reader = new StreamReader(exitsPath))
                     {
                         exits = reader.ReadLine() ?? "";
@@ -946,7 +885,7 @@ namespace EchoEngine
                 toHaunt = rand.Next(5) + 1;
                 try
                 {
-                    string hauntPath = Path.Combine("Text", "Room_descriptions", "Main", "floor_" + z, "y" + y + "_x" + x, "Strange_occerance.txt");
+                    string hauntPath = GetPath($"Text/Room_descriptions/Main/floor_{z}/y{y}_x{x}/Strange_occerance.txt");
                     haunting = File.ReadAllText(hauntPath).Replace("\n", Environment.NewLine);
                 }
                 catch
@@ -971,7 +910,7 @@ namespace EchoEngine
                         sanity--;
                         try
                         {
-                            using (StreamWriter writer = new StreamWriter(Path.Combine("Save", "Health.txt")))
+                            using (StreamWriter writer = new StreamWriter(GetPath("Save/Health.txt")))
                             {
                                 writer.Write(sanity.ToString());
                             }
@@ -1026,20 +965,20 @@ namespace EchoEngine
                     }
                 }
                 // else if (input == "journal"){
-                //     PrintToOutput("\n\n");
-                //     string journal2 = "";
-                //     try
-                //     {
-                //         string filePath = Path.Combine("Text", "Stories", "Tutorial", "Journal.txt");
-                //         journal2 = File.ReadAllText(filePath);
-                //     }
-                //     catch
-                //     {
-                //         journal2 = "Journal not found.";
-                //     }
-                //     PrintToOutput(journal2);
-                //     string journalTemp = Journal(journal);
-                //     PrintToOutput(journalTemp);
+                // PrintToOutput("\n\n");
+                // string journal2 = "";
+                // try
+                // {
+                // string filePath = Path.Combine("Text", "Stories", "Tutorial", "Journal.txt");
+                // journal2 = File.ReadAllText(filePath);
+                // }
+                // catch
+                // {
+                // journal2 = "Journal not found.";
+                // }
+                // PrintToOutput(journal2);
+                // string journalTemp = Journal(journal);
+                // PrintToOutput(journalTemp);
                 // }
                 else if (input == "use")
                 {
@@ -1053,7 +992,7 @@ namespace EchoEngine
                     string winTitle = "";
                     try
                     {
-                        string titlePath = Path.Combine("Text", "Misc", "Title.txt");
+                        string titlePath = GetPath("Text/Misc/Title.txt");
                         if (File.Exists(titlePath))
                         {
                             using (StreamReader titleReader = new StreamReader(titlePath))
@@ -1076,7 +1015,6 @@ namespace EchoEngine
                 {
                     PrintToOutput(Environment.NewLine + Environment.NewLine + " THAT IS NOT A VALID INPUT");
                 }
-
                 PrintToOutput(Environment.NewLine + Environment.NewLine + "PRESS ENTER TO CONTINUE... ");
                 if (scanner == null)
                 {
@@ -1088,20 +1026,17 @@ namespace EchoEngine
                 }
             }
         }
-
         public void ClearScreen()
         {
             ClearOutput();
         }
-
-        public new int[] Move(string direction, string exits, int x, int y, int z, string location)
+        public int[] Move(string direction, string exits, int x, int y, int z, string location)
         {
             int h = 0;
             List<string> inventoryItems = new List<string>();
-
             try
             {
-                string invPath = Path.Combine("Save", "Inventory.txt");
+                string invPath = GetPath("Save/Inventory.txt");
                 inventoryItems = new List<string>(File.ReadAllLines(invPath));
             }
             catch (Exception ex)
@@ -1136,7 +1071,6 @@ namespace EchoEngine
             {
                 PrintToOutput(Environment.NewLine + Environment.NewLine + "You can't go that way.");
             }
-
             if (location == "cabin")
             {
                 h = 0;
@@ -1147,7 +1081,7 @@ namespace EchoEngine
             }
             try
             {
-                using (StreamWriter writer = new StreamWriter(Path.Combine("Save", "Location.txt")))
+                using (StreamWriter writer = new StreamWriter(GetPath("Save/Location.txt")))
                 {
                     writer.Write("" + h + y + x + z);
                 }
@@ -1156,24 +1090,20 @@ namespace EchoEngine
             {
                 Console.WriteLine(ex.ToString());
             }
-
             return new int[] { x, y, z };
         }
-
         public string Inventory()
         {
             List<string> inventoryItems = new List<string>();
-
             try
             {
-                string invPath = Path.Combine("Save", "Inventory.txt");
+                string invPath = GetPath("Save/Inventory.txt");
                 inventoryItems = new List<string>(File.ReadAllLines(invPath));
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
             }
-
             if (inventoryItems.Count == 0)
             {
                 return Environment.NewLine + Environment.NewLine + "Your inventory is empty";
@@ -1183,16 +1113,14 @@ namespace EchoEngine
                 return Environment.NewLine + "Your inventory:" + Environment.NewLine + string.Join(Environment.NewLine, inventoryItems);
             }
         }
-
         public string Search(string items, int x, int y, int z, string location)
         {
             HashSet<string> inventoryHistory = new HashSet<string>();
             List<string> itemsFound = new List<string>();
             int entries = 0;
-
             try
             {
-                string histPath = Path.Combine("Save", "Inventory_history.txt");
+                string histPath = GetPath("Save/Inventory_history.txt");
                 foreach (string line in File.ReadLines(histPath))
                 {
                     inventoryHistory.Add(line);
@@ -1202,14 +1130,12 @@ namespace EchoEngine
             {
                 Console.WriteLine(ex.ToString());
             }
-
             List<string> itemsList = new List<string>();
-
             if (location == "cabin")
             {
                 try
                 {
-                    string itemsPath = Path.Combine("Text", "Room_descriptions", "Tutorial", "y" + y + "_x" + x, "Items.txt");
+                    string itemsPath = GetPath($"Text/Room_descriptions/Tutorial/y{y}_x{x}/Items.txt");
                     itemsList = new List<string>(File.ReadAllLines(itemsPath));
                 }
                 catch (Exception ex)
@@ -1221,7 +1147,7 @@ namespace EchoEngine
             {
                 try
                 {
-                    string itemsPath = Path.Combine("Text", "Room_descriptions", "Main", "Floor_" + z, "y" + y + "_x" + x, "Items.txt");
+                    string itemsPath = GetPath($"Text/Room_descriptions/Main/Floor_{z}/y{y}_x{x}/Items.txt");
                     itemsList = new List<string>(File.ReadAllLines(itemsPath));
                 }
                 catch (Exception ex)
@@ -1229,7 +1155,6 @@ namespace EchoEngine
                     Console.WriteLine(ex.ToString());
                 }
             }
-
             foreach (string item in itemsList)
             {
                 if (!inventoryHistory.Contains(item))
@@ -1240,9 +1165,9 @@ namespace EchoEngine
                     }
                     try
                     {
-                        string invPath = Path.Combine("Save", "Inventory.txt");
+                        string invPath = GetPath("Save/Inventory.txt");
                         File.AppendAllText(invPath, item + Environment.NewLine);
-                        string histPath = Path.Combine("Save", "Inventory_history.txt");
+                        string histPath = GetPath("Save/Inventory_history.txt");
                         File.AppendAllText(histPath, item + Environment.NewLine);
                         itemsFound.Add(item);
                     }
@@ -1254,13 +1179,12 @@ namespace EchoEngine
             }
             try
             {
-                File.WriteAllText(Path.Combine("Save", "Journal.txt"), entries.ToString());
+                File.WriteAllText(GetPath("Save/Journal.txt"), entries.ToString());
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
             }
-
             if (itemsFound.Count == 0)
             {
                 return Environment.NewLine + Environment.NewLine + "You found nothing";
@@ -1270,38 +1194,34 @@ namespace EchoEngine
                 return Environment.NewLine + Environment.NewLine + "You found:" + Environment.NewLine + string.Join(Environment.NewLine, itemsFound);
             }
         }
-
-        // public string Journal(int entries)
-        // {
-        //     string journalEntry = " ";
-        //     string journalTotal = " ";
-
-        //     for (int i = 1; i <= entries; i++)
-        //     {
-        //         try
-        //         {
-        //             string filePath = Path.Combine("Text", "Stories", "Journal", i + ".txt");
-        //             journalEntry = File.ReadAllText(filePath);
-        //         }
-        //         catch (Exception ex)
-        //         {
-        //             Console.WriteLine(ex.ToString());
-        //         }
-        //         journalTotal += "\n\n";
-        //         journalTotal += journalEntry;
-        //     }
-        //     return journalTotal;
-        // }
-
+        // // public string Journal(int entries)
+        // // {
+        // // string journalEntry = " ";
+        // // string journalTotal = " ";
+        // // for (int i = 1; i <= entries; i++)
+        // // {
+        // // try
+        // // {
+        // // string filePath = GetPath($"Text/Stories/Journal/{i}.txt");
+        // // journalEntry = File.ReadAllText(filePath);
+        // // }
+        // // catch (Exception ex)
+        // // {
+        // // Console.WriteLine(ex.ToString());
+        // // }
+        // // journalTotal += "\n\n";
+        // // journalTotal += journalEntry;
+        // // }
+        // // return journalTotal;
+        // // }
         public string Use(int x, int y, int z)
         {
             string result = "";
-
             // Load required items from Finishing/Required_items.txt (one per line)
             List<string> requiredItems = new List<string>();
             try
             {
-                string reqPath = Path.Combine("Finishing", "Required_items.txt");
+                string reqPath = GetPath("Finishing/Required_items.txt");
                 if (File.Exists(reqPath))
                 {
                     foreach (string line in File.ReadLines(reqPath))
@@ -1315,12 +1235,11 @@ namespace EchoEngine
                 }
             }
             catch { }
-
             // Load required location from Finishing/Required_room.txt (x, y, z, each on a new line)
             int requiredX = -1, requiredY = -1, requiredZ = -1;
             try
             {
-                string locPath = Path.Combine("Finishing", "Required_room.txt");
+                string locPath = GetPath("Finishing/Required_room.txt");
                 if (File.Exists(locPath))
                 {
                     string[] lines = File.ReadAllLines(locPath);
@@ -1330,19 +1249,17 @@ namespace EchoEngine
                 }
             }
             catch { }
-
             // Read inventory
             List<string> inventoryItems = new List<string>();
             try
             {
-                string invPath = Path.Combine("Save", "Inventory.txt");
+                string invPath = GetPath("Save/Inventory.txt");
                 inventoryItems = new List<string>(File.ReadAllLines(invPath));
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
             }
-
             // Only allow win if at required location and have all required items
             if (x == requiredX && y == requiredY && z == requiredZ)
             {
@@ -1370,7 +1287,7 @@ namespace EchoEngine
                 try
                 {
                     // Read the usable items
-                    string usablePath = Path.Combine("Text", "Room_descriptions", "Main", "floor_" + z, "y" + y + "_x" + x, "Usable_Items.txt");
+                    string usablePath = GetPath($"Text/Room_descriptions/Main/floor_{z}/y{y}_x{x}/Usable_Items.txt");
                     if (!File.Exists(usablePath))
                     {
                         return Environment.NewLine + Environment.NewLine + "You have no usable items for this room";
@@ -1383,7 +1300,6 @@ namespace EchoEngine
                     string[] usableItems = lines[0].Split(',');
                     string itemDescription = lines.Length > 1 ? lines[1] : "";
                     string newItem = lines.Length > 2 ? lines[2] : "";
-
                     // Check if the items are in the inventory
                     List<string> missingItems = new List<string>();
                     foreach (string item in usableItems)
@@ -1394,7 +1310,6 @@ namespace EchoEngine
                             missingItems.Add(trimmed);
                         }
                     }
-
                     if (missingItems.Count == 0)
                     {
                         // Remove the items from the inventory
@@ -1402,15 +1317,12 @@ namespace EchoEngine
                         {
                             inventoryItems.Remove(item.Trim());
                         }
-                        string invPath = Path.Combine("Save", "Inventory.txt");
+                        string invPath = GetPath("Save/Inventory.txt");
                         File.WriteAllLines(invPath, inventoryItems);
-
                         // Add the new item to the inventory and inventory history
                         File.AppendAllText(invPath, newItem + Environment.NewLine);
-
-                        string histPath = Path.Combine("Save", "Inventory_history.txt");
+                        string histPath = GetPath("Save/Inventory_history.txt");
                         File.AppendAllText(histPath, newItem + Environment.NewLine);
-
                         // Return the result
                         result = "Used " + string.Join(", ", usableItems) + "." + Environment.NewLine + Environment.NewLine + " " + itemDescription + Environment.NewLine + Environment.NewLine + "You found:" + Environment.NewLine + newItem;
                     }
@@ -1425,16 +1337,14 @@ namespace EchoEngine
                     result = "Error using items.";
                 }
             }
-
             return result;
         }
-
         public bool CheckInventoryTutorial()
         {
             List<string> requiredItems = new List<string>();
             try
             {
-                string reqPath = Path.Combine("Tutorial", "required_items.txt");
+                string reqPath = GetPath("Tutorial/required_items.txt");
                 if (File.Exists(reqPath))
                 {
                     foreach (string line in File.ReadLines(reqPath))
@@ -1455,11 +1365,10 @@ namespace EchoEngine
             {
                 Console.Error.WriteLine("Warning: Error reading required_items.txt. No required items for tutorial.");
             }
-
             List<string> inventoryItems = new List<string>();
             try
             {
-                string invPath = Path.Combine("Save", "Inventory.txt");
+                string invPath = GetPath("Save/Inventory.txt");
                 if (File.Exists(invPath))
                 {
                     inventoryItems = new List<string>(File.ReadAllLines(invPath));
@@ -1473,20 +1382,17 @@ namespace EchoEngine
             {
                 Console.Error.WriteLine("Warning: Error reading Inventory.txt. Inventory is empty.");
             }
-
             // Check if all required items are in the inventory
             return inventoryItems.ContainsAll(requiredItems);
         }
-
         public void GameOver()
         {
             ClearOutput();
             string description = "";
             string gameOverText = "GAME OVER";
-
             try
             {
-                string filePath = Path.Combine("Text", "Stories", "Ending", "Game_over.txt");
+                string filePath = GetPath("Text/Stories/Ending/Game_over.txt");
                 description = File.ReadAllText(filePath).Replace("\n", Environment.NewLine);
             }
             catch
@@ -1498,18 +1404,16 @@ namespace EchoEngine
             Reset();
             PrintToOutput(Environment.NewLine + Environment.NewLine + "Press ENTER to exit...");
             GetUserInput();
-            Application.Exit();
+            this.Close();
         }
-
         public void Win()
         {
             ClearOutput();
             string description = "";
             string winText = "YOU WIN";
-
             try
             {
-                string filePath = Path.Combine("Text", "Stories", "Ending", "win.txt");
+                string filePath = GetPath("Text/Stories/Ending/win.txt");
                 description = File.ReadAllText(filePath).Replace("\n", Environment.NewLine);
             }
             catch
@@ -1521,14 +1425,13 @@ namespace EchoEngine
             Reset();
             PrintToOutput(Environment.NewLine + Environment.NewLine + "Press ENTER to exit...");
             GetUserInput();
-            Application.Exit();
+            this.Close();
         }
-
         public void Reset()
         {
             try
             {
-                using (StreamWriter writer = new StreamWriter(Path.Combine("Save", "Location.txt")))
+                using (StreamWriter writer = new StreamWriter(GetPath("Save/Location.txt")))
                 {
                     writer.Write("2");
                 }
@@ -1539,7 +1442,7 @@ namespace EchoEngine
             }
             try
             {
-                using (StreamWriter writer = new StreamWriter(Path.Combine("Save", "Inventory.txt")))
+                using (StreamWriter writer = new StreamWriter(GetPath("Save/Inventory.txt")))
                 {
                     writer.Write("");
                 }
@@ -1550,7 +1453,7 @@ namespace EchoEngine
             }
             try
             {
-                using (StreamWriter writer = new StreamWriter(Path.Combine("Save", "Inventory_history.txt")))
+                using (StreamWriter writer = new StreamWriter(GetPath("Save/Inventory_history.txt")))
                 {
                     writer.Write("");
                 }
@@ -1561,19 +1464,19 @@ namespace EchoEngine
             }
             // try
             // {
-            //     using (StreamWriter writer = new StreamWriter(Path.Combine("Save", "Journal.txt")))
-            //     {
-            //         writer.Write("0");
-            //     }
+            // using (StreamWriter writer = new StreamWriter(GetPath("Save/Journal.txt")))
+            // {
+            // writer.Write("0");
+            // }
             // }
             // catch (Exception ex)
             // {
-            //     Console.WriteLine(ex.ToString());
+            // Console.WriteLine(ex.ToString());
             // }
             string defaultHealth = "20";
             try
             {
-                string defPath = Path.Combine("Finishing", "Default_health.txt");
+                string defPath = GetPath("Finishing/Default_health.txt");
                 if (File.Exists(defPath))
                 {
                     defaultHealth = File.ReadAllText(defPath).Trim();
@@ -1582,7 +1485,7 @@ namespace EchoEngine
             catch { }
             try
             {
-                using (StreamWriter writer = new StreamWriter(Path.Combine("Save", "Health.txt")))
+                using (StreamWriter writer = new StreamWriter(GetPath("Save/Health.txt")))
                 {
                     writer.Write(defaultHealth);
                 }
@@ -1592,29 +1495,35 @@ namespace EchoEngine
                 Console.WriteLine(ex.ToString());
             }
         }
-
-        private void InitializeComponent()
-        {
-            this.SuspendLayout();
-            this.ClientSize = new Size(800, 600);
-            this.Name = "MainForm";
-            this.StartPosition = FormStartPosition.CenterScreen;
-            this.ResumeLayout(false);
-        }
     }
-
     static class Program
     {
         [STAThread]
-        static void Main()
+        static int Main(string[] args)
         {
-            Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+            return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+        }
+        public static AppBuilder BuildAvaloniaApp()
+            => AppBuilder.Configure<App>()
+                .UsePlatformDetect()
+                .WithInterFont()
+                .LogToTrace();
+    }
+    public class App : Application
+    {
+        public override void Initialize()
+        {
+            // No XAML loading needed for code-only UI
+        }
+        public override void OnFrameworkInitializationCompleted()
+        {
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                desktop.MainWindow = new MainWindow();
+            }
+            base.OnFrameworkInitializationCompleted();
         }
     }
-
     static class ListExtensions
     {
         public static bool ContainsAll<T>(this List<T> list, List<T> other)
