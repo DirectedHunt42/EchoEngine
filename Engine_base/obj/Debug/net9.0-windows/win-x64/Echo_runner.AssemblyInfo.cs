@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Echo_runner")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3dfbb1c9fec83e6898becbf556183e327b2a4fc4")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7824697475b5f13e586d5975e99755a384141f99")]
 [assembly: System.Reflection.AssemblyProductAttribute("Echo_runner")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Echo_runner")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

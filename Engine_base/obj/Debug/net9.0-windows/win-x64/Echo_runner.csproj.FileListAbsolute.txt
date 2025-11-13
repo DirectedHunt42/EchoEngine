@@ -277,3 +277,5 @@ E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0-windows\win-x64
 E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0-windows\win-x64\Echo_runner.pdb
 E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0-windows\win-x64\Echo_runner.genruntimeconfig.cache
 E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0-windows\win-x64\ref\Echo_runner.dll
+E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0-windows\win-x64\Echo_runner.csproj.AssemblyReference.cache
+E:\Projects\Programming\Echo Engine\Engine_base\obj\Debug\net9.0-windows\win-x64\Avalonia\Resources.Inputs.cache
