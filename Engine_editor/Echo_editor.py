@@ -1853,30 +1853,38 @@ def setup_main_ui():
     # ========================= Export Tab =========================
     export_container = ctk.CTkScrollableFrame(export_tab, fg_color="#222222", corner_radius=10)
     export_container.pack(expand=True, fill="both", padx=20, pady=20)
+
     export_path_label = ctk.CTkLabel(export_container, text="Export Path:", font=(custom_font_family, 16))
     export_path_label.pack(pady=(10,5))
+
     # Frame to hold entry + button side by side
     path_frame = ctk.CTkFrame(export_container, fg_color="transparent")
     path_frame.pack(fill="x", pady=(0,10))
+
     export_path_entry = ctk.CTkEntry(path_frame, width=screen_w-200, font=(custom_font_family, 14))
     export_path_entry.pack(side="left", fill="x", expand=True, padx=(0,10))
+
     def browse_export_path():
         selected_dir = filedialog.askdirectory(title="Select Export Folder")
         if selected_dir:
             export_path_entry.delete(0, "end")
             export_path_entry.insert(0, selected_dir)
+
     browse_button = ctk.CTkButton(path_frame, text="📂", width=30, fg_color="#444444", hover_color="#666666", command=browse_export_path)
     browse_button.pack(side="right")
-    # Add platform selection
-    platform_label = ctk.CTkLabel(export_container, text="Platform:", font=(custom_font_family, 16))
-    platform_label.pack(pady=(10,5))
-    platform_combo = ctk.CTkComboBox(export_container, values=["Windows", "Linux"])
-    platform_combo.pack(pady=(0,10))
-    if os_name == "windows":
-        platform_combo.set("Windows")
-    else:
-        platform_combo.set("Linux")
+
+    # --- Platform selection removed ---
+    # platform_label = ctk.CTkLabel(export_container, text="Platform:", font=(custom_font_family, 16))
+    # platform_label.pack(pady=(10,5))
+    # platform_combo = ctk.CTkComboBox(export_container, values=["Windows", "Linux"])
+    # platform_combo.pack(pady=(0,10))
+    # if os_name == "windows":
+    #     platform_combo.set("Windows")
+    # else:
+    #     platform_combo.set("Linux")
+
     instructions_var = tk.StringVar()
+    # --- Instructions simplified and hardcoded for Windows ---
     instructions_var.set(
         "To export your game, specify the folder where you want the game to be exported.\n"
         "Click the '📂' button to browse for a folder.\n"
@@ -1885,60 +1893,71 @@ def setup_main_ui():
         "To run the game, run the 'Echo_runner.exe' file located in the exported folder.\n"
         "You can then safely rename the exported folder to your desired game name to your desired game name, as well as create a custom shortcut to the 'Echo_runner.exe' file for easy access."
     )
+
+    note_var = tk.StringVar()
+    note_var.set("Please note: Exported games are Windows-only.")
+    note_label = ctk.CTkLabel(export_container, textvariable=note_var, font=(custom_font_family, 14, "italic"), text_color="#FFA500")
+    note_label.pack(pady=(0,10), padx=10)
+
     export_instructions_label = ctk.CTkLabel(export_container, textvariable=instructions_var, font=(custom_font_family, 14),
-                                             justify="left", wraplength=screen_w-100)
+                                            justify="left", wraplength=screen_w-100)
     export_instructions_label.pack(pady=(10,10), padx=10)
-    def update_instructions(event=None):
-        p = platform_combo.get()
-        runner_name = "Echo_runner.exe" if p == "Windows" else "Echo_runner"
-        text = (
-            "To export your game, specify the folder where you want the game to be exported.\n"
-            "Click the '📂' button to browse for a folder.\n"
-            "Then click the 'Export Game' button to start the export process.\n"
-            "Once the game has been exported, you will find it in a folder named 'Echo_Game_Export' inside the selected directory.\n"
-            f"To run the game, run the '{runner_name}' file located in the exported folder.\n"
-            "You can then safely rename the exported folder to your desired game name, as well as create a custom shortcut to the '{runner_name}' file for easy access."
-        )
-        instructions_var.set(text)
-    platform_combo.bind("<<ComboBoxSelected>>", update_instructions)
-    update_instructions()
+
+    # --- update_instructions function and binding removed ---
+    # def update_instructions(event=None):
+    #     ...
+    # platform_combo.bind("<<ComboBoxSelected>>", update_instructions)
+    # update_instructions()
+
     def export_game():
         export_path = export_path_entry.get().strip()
         if not export_path:
             CTkMessagebox(title="Error", message="Please specify an export path.", icon="cancel")
             return
-        platform_choice = platform_combo.get()
+
+        # --- platform_choice variable removed ---
+        # platform_choice = platform_combo.get()
+
         errors = validate_game_setup() + check_tutorial() + check_main()
         if errors:
             CTkMessagebox(title="Validation Error", message="\n".join(errors), icon="cancel")
             return
+
         save_game_setup()
         save_tutorial()
         save_main_level()
+
         try:
             script_dir = save_base_path
             working_game_dir = os.path.join(script_dir, "..", "Working_game")
             if not os.path.exists(working_game_dir):
                 CTkMessagebox(title="Error", message="Working_game directory not found. Please save your work first.", icon="cancel")
                 return
+
             dest_dir = os.path.join(export_path, "Echo_Game_Export")
             if os.path.exists(dest_dir):
                 progress_bar = ctk.CTkProgressBar(export_container, mode="indeterminate", width=300)
                 progress_bar.pack(pady=(10,10))
                 shutil.rmtree(dest_dir)
+
             shutil.copytree(working_game_dir, dest_dir)
-            # Adjust the runner based on platform choice
+
+            # --- Adjust the runner logic simplified for Windows-only export ---
             current_runner = os.path.join(dest_dir, "Echo_runner.exe" if os_name == "windows" else "Echo_runner")
-            target_runner = os.path.join(dest_dir, "Echo_runner.exe" if platform_choice == "Windows" else "Echo_runner")
+            target_runner = os.path.join(dest_dir, "Echo_runner.exe") # Always target .exe
+
             if os.path.exists(current_runner):
                 os.rename(current_runner, target_runner)
-                if platform_choice == "Linux" and os_name != "windows":
-                    os.chmod(target_runner, 0o755)
+                # --- Linux-specific chmod logic removed ---
+                # if platform_choice == "Linux" and os_name != "windows":
+                #     os.chmod(target_runner, 0o755)
+
             CTkMessagebox(title="Success", message=f"Game exported successfully to:\n{dest_dir}", icon="check")
         except Exception as e:
             CTkMessagebox(title="Error", message=f"Failed to export game:\n{e}", icon="cancel")
+
     export_button = ctk.CTkButton(export_container, text="Export Game", font=(custom_font_family, 16),
-                                  fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black", command=export_game)
+                                fg_color=SAVE_COLOR, hover_color=SAVE_HOVER, text_color="black", command=export_game)
     export_button.pack(pady=(20,10))
     # ========================= About Tab =========================
     about_container = ctk.CTkScrollableFrame(about_tab, fg_color="#222222", corner_radius=10)
