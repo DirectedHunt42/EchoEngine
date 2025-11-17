@@ -12,9 +12,9 @@ REM   Define all your scripts, icons, and paths here.
 
 REM  Build Toggles 
 REM   Set to "YES" to compile, any other value to skip
-set "COMPILE_ECHO_HUB=NO"
+set "COMPILE_ECHO_HUB=YES"
 set "COMPILE_ASCII=NO"
-set "COMPILE_EDITOR=YES"
+set "COMPILE_EDITOR=NO"
 
 REM  Main Directories 
 set "OUTPUT_DIR=%SCRIPT_DIR%\dist"
