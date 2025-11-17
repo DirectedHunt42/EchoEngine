@@ -8,9 +8,9 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 
 # Build Toggles
-COMPILE_ECHO_HUB="NO"
+COMPILE_ECHO_HUB="YES"
 COMPILE_ASCII="NO"
-COMPILE_EDITOR="YES"
+COMPILE_EDITOR="NO"
 
 # Main Directories
 OUTPUT_DIR="$SCRIPT_DIR/dist"

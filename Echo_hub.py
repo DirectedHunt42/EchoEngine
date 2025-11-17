@@ -26,8 +26,8 @@ PROGRESS_AREA_HEIGHT = 70
 VERSION = "3"
 GITURL = "https://github.com/DirectedHunt42/EchoEngine"
 WINDOWS_UPDATE_ASSET = "Echo_Editor_Setup.exe"
-UBUNTU_UPDATE_ASSET = "Echo_Editor_Setup_ubuntu.deb"
-OTHER_LINUX_UPDATE_ASSET = "Echo_Editor_Setup_linux.sh"
+UBUNTU_UPDATE_ASSET = "Echo_Editor_Setup_ubuntu.run"
+OTHER_LINUX_UPDATE_ASSET = "Echo_Editor_Setup_linux.run"
 DARWIN_UPDATE_ASSET = "Echo_Editor_Setup_mac.dmg"
 
 os_name = platform.system().lower()
