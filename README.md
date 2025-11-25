@@ -43,4 +43,6 @@
 
 [![Flag Counter](https://s01.flagcounter.com/countxl/CNIc/bg_0D1117/txt_FFFFFF/border_0D1117/columns_6/maxflags_20/viewers_0/labels_1/pageviews_1/flags_0/percent_1/)](https://info.flagcounter.com/CNIc)
 
+---
+
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-NovaFoundry-6f4e37?style=for-the-badge&logo=buymeacoffee&logoColor=white)](https://buymeacoffee.com/novafoundry)
