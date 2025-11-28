@@ -41,7 +41,9 @@
 - 🎛️ Easy-to-use interface for text-based adventures.
 - 🗺️ Create interconnected rooms and explore them.
 
-[![Flag Counter](https://s01.flagcounter.com/countxl/CNIc/bg_0D1117/txt_FFFFFF/border_0D1117/columns_6/maxflags_20/viewers_0/labels_1/pageviews_1/flags_0/percent_1/)](https://info.flagcounter.com/CNIc)
+<div>
+  <a href="https://info.flagcounter.com/CNIc"><img src="https://s01.flagcounter.com/count2/CNIc/bg_0B0F1A/txt_FFFFFF/border_FFFFFF/columns_4/maxflags_20/viewers_0/labels_0/pageviews_1/flags_0/percent_1/" alt="Flag Counter" border="0"></a>
+</div>
 
 ---
 
