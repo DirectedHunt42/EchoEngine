@@ -34,7 +34,7 @@ save_base_path = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False
 # ---------------- Help resources (assumptions)
 # Default help webpage URL (assumption: replace with real URL if you have one)
 HELP_URL = "https://github.com/DirectedHunt42/EchoEngine/wiki"
-VIDEO_HELP_URL = "https://www.youtube.com/@Nova-Foundry"
+VIDEO_HELP_URL = "https://archive.org/details/echo-engine-tutorial-video-archive"
 # Default help PDF path relative to resource_base_path. If not present, user will be prompted to pick one.
 HELP_PDF_DEFAULT = os.path.join(resource_base_path, "Docs", "Help", "Help.pdf")
 os_name = platform.system().lower()
