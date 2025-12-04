@@ -1,56 +1,58 @@
 # Security Policy
 
-## 🛡 Supported Versions
+## Supported Versions
 
-We take security seriously and strive to maintain the stability and safety of this project.  
-Security updates and patches will generally be provided for the latest **major** and **minor** versions.
+Only the most recent release of this project receives security updates and patches.
 
-| Version       | Supported        |
-|---------------|-----------------|
-| main / latest | ✅ Supported     |
-| older releases| ⚠️ Best effort  |
+| Version | Supported          |
+|----------|--------------------|
+| Latest | ✅ Supported       |
+| Older versions   | ❌ Not supported  |
 
-If you’re using an older release, please consider upgrading to the latest version for security fixes and improvements.
-
----
-
-## 🐞 Reporting a Vulnerability
-
-If you discover a security vulnerability, please **open a new GitHub issue** and include as much detail as possible:
-
-- A clear description of the issue  
-- Steps to reproduce or a proof-of-concept (if applicable)  
-- The potential impact or affected components  
-- Any suggested mitigations or fixes  
-
-We’ll review the issue promptly and work to provide a fix as soon as possible.
+To stay secure, please always update to the latest release as soon as possible.
 
 ---
 
-## 🔐 Disclosure Policy
+## Reporting a Vulnerability
 
-- We request that you **do not publicly disclose** security issues until they have been addressed.  
-- Once a fix is available, we will **publish release notes** and credit the reporter if they wish.  
-- We follow a **responsible disclosure** approach — coordinating timing and details of the release to ensure safety.
+If you discover a security vulnerability in this project, please **do not open a public issue**.
 
----
+Instead, report it responsibly by contacting:
 
-## ⚙️ Best Practices for Contributors
+📧 **security@novafoundry.ca**
 
-When contributing to the project:
+Please include the following details in your report:
 
-- Avoid committing secrets, tokens, or passwords to the repository.  
-- Validate all user input and avoid unsafe practices like unsafe deserialization.  
-- Use secure dependencies and check them regularly.  
-- Review your changes for potential data leaks or insecure configurations.  
+- A detailed description of the vulnerability  
+- Steps to reproduce the issue  
+- The potential impact or severity  
+- Any suggested mitigations or patches  
 
 ---
 
-## 🧩 Acknowledgments
+## Security Guidelines
 
-We appreciate all community members who help make this project safer.  
-Confirmed security fixes may be credited in the project release notes (if the reporter wishes).
+Contributors should follow these best practices to maintain project security:
+
+- Never include secrets, API keys, or passwords in commits  
+- Use HTTPS and other secure protocols where applicable  
+- Keep dependencies up to date before submitting pull requests  
+- Follow the [Code of Conduct](./CODE_OF_CONDUCT.md)
 
 ---
 
-_Last updated: 2025_
+## Disclosure Policy
+
+Once a vulnerability is confirmed and fixed:
+
+1. The fix will be included in the next release.  
+2. The release notes will acknowledge the issue and credit the reporter (unless anonymity is requested).  
+3. Users will be encouraged to update immediately.  
+
+---
+
+## Security Resources
+
+For best practices and guidance, see:  
+- [GitHub Security Advisories](https://docs.github.com/en/code-security/security-advisories)  
+- [Open Source Security Foundation](https://openssf.org/)
