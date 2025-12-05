@@ -17,6 +17,10 @@
 </p>
 
 <div align="center">
+<a href="https://sourceforge.net/projects/echoengine/files/latest/download"><img alt="Download Echo Engine" src="https://a.fsdn.com/con/app/sf-download-button" width=276 height=48 srcset="https://a.fsdn.com/con/app/sf-download-button?button_size=2x 2x"></a>
+</div>
+
+<div align="center">
 
 ![Commits](https://img.shields.io/github/commit-activity/m/DirectedHunt42/EchoEngine?color=blue)
 ![Issues](https://img.shields.io/github/issues/DirectedHunt42/EchoEngine)
@@ -34,9 +38,13 @@
 
 ### Features
 
-- Easy-to-use interface for text-based adventures.
-- Create interconnected rooms and explore them.
+- 🎛️ Easy-to-use interface for text-based adventures.
+- 🗺️ Create interconnected rooms and explore them.
 
-[![Flag Counter](https://s01.flagcounter.com/countxl/CNIc/bg_0D1117/txt_FFFFFF/border_0D1117/columns_6/maxflags_20/viewers_0/labels_1/pageviews_1/flags_0/percent_1/)](https://info.flagcounter.com/CNIc)
+<div>
+  <a href="https://info.flagcounter.com/CNIc"><img src="https://s01.flagcounter.com/count2/CNIc/bg_0B0F1A/txt_FFFFFF/border_FFFFFF/columns_4/maxflags_20/viewers_0/labels_0/pageviews_1/flags_0/percent_1/" alt="Flag Counter" border="0"></a>
+</div>
 
-[Buy me a coffee](https://buymeacoffee.com/novafoundry)
+---
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-NovaFoundry-6f4e37?style=for-the-badge&logo=buymeacoffee&logoColor=white)](https://buymeacoffee.com/novafoundry)
