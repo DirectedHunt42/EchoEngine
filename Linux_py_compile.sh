@@ -156,6 +156,11 @@ if [ "$COMPILE_ECHO_HUB" = "YES" ]; then
         exit 1
     fi
     echo "Successfully compiled $ECHO_HUB_SCRIPT -> $OUTPUT_DIR"
+    # Ensure the built executable is marked executable on Linux
+    if [ -f "$OUTPUT_DIR/$ECHO_HUB_BUILD_NAME" ]; then
+        chmod +x "$OUTPUT_DIR/$ECHO_HUB_BUILD_NAME"
+        echo "Set executable permission on $OUTPUT_DIR/$ECHO_HUB_BUILD_NAME"
+    fi
 else
     echo
     echo "--- Skipping Echo Hub (toggle not set to YES) ---"
@@ -185,6 +190,11 @@ if [ "$COMPILE_ASCII" = "YES" ]; then
         exit 1
     fi
     echo "Successfully compiled $ASCII_SCRIPT -> $OUTPUT_DIR"
+    # Ensure the built executable is marked executable on Linux
+    if [ -f "$OUTPUT_DIR/$ASCII_BUILD_NAME" ]; then
+        chmod +x "$OUTPUT_DIR/$ASCII_BUILD_NAME"
+        echo "Set executable permission on $OUTPUT_DIR/$ASCII_BUILD_NAME"
+    fi
 else
     echo
     echo "--- Skipping Ascii Generator (toggle not set to YES) ---"
@@ -223,6 +233,11 @@ if [ "$COMPILE_EDITOR" = "YES" ]; then
         exit 1
     fi
     echo "Successfully compiled $EDITOR_SCRIPT -> $OUTPUT_DIR"
+    # Ensure the built executable is marked executable on Linux
+    if [ -f "$OUTPUT_DIR/$EDITOR_BUILD_NAME" ]; then
+        chmod +x "$OUTPUT_DIR/$EDITOR_BUILD_NAME"
+        echo "Set executable permission on $OUTPUT_DIR/$EDITOR_BUILD_NAME"
+    fi
 else
     echo
     echo "--- Skipping Echo Editor (toggle not set to YES) ---"
