@@ -1,0 +1,51 @@
+<project>
+    <shortName>EchoEngine</shortName>
+    <fullName>Echo Engine</fullName>
+    <version>Git Release 3</version>
+    <licenseFile>C:\Users\jackp\Downloads\Linux\EchoEngine\Engine_editor\Docs\LICENSE\LICENSE.txt</licenseFile>
+    <logoImage>C:\Users\jackp\Downloads\Echo Engine Installer.png</logoImage>
+    <componentList>
+        <component name="default">
+            <description>Default Component</description>
+            <canBeEdited>1</canBeEdited>
+            <selected>1</selected>
+            <show>1</show>
+
+            <!-- Project files -->
+
+            <folderList>
+                <folder destination="${installdir}" name="programfileslinux">
+                    <description>Program Files</description>
+                    <platforms>linux</platforms>
+                    <distributionFileList>
+                        <distributionDirectory>
+                            <origin>C:/Users/jackp/Downloads/Linux/EchoEngine</origin>
+                        </distributionDirectory>
+                    </distributionFileList>
+                </folder>
+            </folderList>
+        </component>
+    </componentList>
+    <enableRollback>1</enableRollback>
+    <enableTimestamp>1</enableTimestamp>
+    <vendor>Nova Foundry</vendor>
+
+    <!-- Installation directory parameter -->
+
+    <parameterList>
+        <directoryParameter>
+            <name>installdir</name>
+            <description>Installer.Parameter.installdir.description</description>
+            <explanation>Installer.Parameter.installdir.explanation</explanation>
+            <value></value>
+            <default>${platform_install_prefix}/${product_shortname}-${product_version}</default>
+            <allowEmptyValue>0</allowEmptyValue>
+            <ask>yes</ask>
+            <cliOptionName>prefix</cliOptionName>
+            <mustBeWritable>yes</mustBeWritable>
+            <mustExist>0</mustExist>
+            <width>40</width>
+        </directoryParameter>
+    </parameterList>
+</project>
+
